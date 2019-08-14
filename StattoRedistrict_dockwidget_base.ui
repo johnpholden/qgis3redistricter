@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArrowsmithRedistrictDockWidgetBase</class>
+ <widget class="QDockWidget" name="ArrowsmithRedistrictDockWidgetBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>377</width>
+    <height>352</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>QGIS Redistricting Tool</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMaximumSize</enum>
+    </property>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QPushButton" name="btnParameters">
+        <property name="text">
+         <string>Set Parameters</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnToolbox">
+        <property name="text">
+         <string>Toolbox</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="lblMainInfo">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>No active layer!
+No active population field!
+No active number of districts to create!
+</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnUpdate">
+      <property name="text">
+       <string>Update Selected Polygons</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QToolButton" name="btnActiveDistrictMinus">
+        <property name="text">
+         <string> - </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnActiveDistrictPlus">
+        <property name="text">
+         <string>+</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblActiveDistrict">
+        <property name="text">
+         <string>No active district</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnSelect">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Select on Map</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnEraser">
+        <property name="text">
+         <string>Erase</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetFixedSize</enum>
+      </property>
+      <item>
+       <widget class="QSlider" name="sliderDistricts">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>1</number>
+        </property>
+        <property name="pageStep">
+         <number>1</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBothSides</enum>
+        </property>
+        <property name="tickInterval">
+         <number>1</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Geographic Selection Field:</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmbGeoField"/>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnGeoSelect">
+        <property name="text">
+         <string>Select by Geo</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <widget class="QToolButton" name="btnPreview">
+        <property name="text">
+         <string>Preview Selection</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnUndo">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Undo Last Update</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <item>
+       <widget class="QLabel" name="lblPreview">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

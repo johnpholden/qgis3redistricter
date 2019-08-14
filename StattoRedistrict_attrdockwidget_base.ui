@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArrowsmithRedistrictDockWidgetBase</class>
+ <widget class="QDockWidget" name="ArrowsmithRedistrictDockWidgetBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>350</width>
+    <height>448</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Attributes</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTableWidget" name="tblPop">
+      <property name="baseSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

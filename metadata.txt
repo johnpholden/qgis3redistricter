@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Statto Redistricter QGISv3
+qgisMinimumVersion=3.0
+qgisMaximumVersion=3.99
+description=Easily create political districts of equal population
+version=2.0
+author=John Holden
+email=resdistricting@stattosoftware.com
+about=The Statto Redistricter for QGISv3 allows you to easily redistrict a map into areas of equal population. Developed by John Holden, Statto Software LLC. Special thanks to Blake Esselstyn; Zach Alexopoulos; Moussa Dia and Robert Rose, the William & Mary Center for Geospatial Analysis; the William & Mary Election Law Society; and the University of Arizona Geography Department.
+
+tracker=http://www.stattosoftware.com
+repository=https://github.com/stattosoftware/qgisv3redistricter
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+changelog=2.0 + Added: Percent away of deviation to mean for population\n+ Fixed: slider increments now 1 instead of 2\n+ Added: slider ticks for each district\n+ Fixed: now loads deviation percentage (old save files broken)\n+ Added: +- increments for the slider\n+ Fixed: If you create map styles from district names, the box now unchecks automatically\n+ Fixed: If district is locked, you now cannot add anything to the district (used to only be able to not remove from the district)\n+ Fixed: Crash on plugin exit\n+ Added: Undo feature\n+ Added: Preview selection/population feature\n - 1.1 - fixed bug with file loading, added geography selector tool\n 1.0 - first stable release
+
+# Tags are comma separated with spaces allowed
+tags=redistricting,reapportionment,vector
+
+homepage=http://www.stattosoftware.com
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+

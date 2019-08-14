@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArrowsmithRedistrictDlgToolbox</class>
+ <widget class="QDialog" name="ArrowsmithRedistrictDlgToolbox">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>430</width>
+    <height>531</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Redistricting Parameters</string>
+  </property>
+  <widget class="QDialogButtonBox" name="boxButton">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>490</y>
+     <width>341</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QPlainTextEdit" name="txtElectorates">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>50</y>
+     <width>391</width>
+     <height>431</height>
+    </rect>
+   </property>
+   <property name="backgroundVisible">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>10</y>
+     <width>391</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter the names of the electorates, one per line.</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>boxButton</sender>
+   <signal>accepted()</signal>
+   <receiver>ArrowsmithRedistrictDlgToolbox</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>boxButton</sender>
+   <signal>rejected()</signal>
+   <receiver>ArrowsmithRedistrictDlgToolbox</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
