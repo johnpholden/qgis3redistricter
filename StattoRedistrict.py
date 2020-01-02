@@ -45,16 +45,17 @@ from .StattoRedistrict_dlgpreview import StattoRedistrictDlgPreview
 import os.path
 
 #define our list containers
-dataFieldList = []
-dataFieldMasterList = []
-dataPlanList = []
-locked = {}
-districtId = {}
-districtName = {}
-distPop = {}
-distPop2 = {}
-planManagerList = []
-activePlanName = ''
+dataFieldList = []				#the list of fields used by the currently active project
+dataFieldMasterList = []		#the list of fields from all projects on the layer, for proper save/load mechanism
+dataPlanList = []				#the list of plans on all projects on the layer, for proper save/load mechanism
+locked = {}						#whether a plan is locked
+districtId = {}					#a lookup table of district ID to name
+								#	IDs are used as much as possible, but name is stored on the table
+districtName = {}				#lookup table of district name to ID
+distPop = {}					#the population of the district ID
+distPop2 = {}					#the population of the district ID, field number two
+planManagerList = []			#list of plans for the plan manager
+activePlanName = ''				#the name of the currently active loaded plan
 
 #define our DataField class
 #this is used to hold the user defined columns in the plan
@@ -83,6 +84,7 @@ class DataField(object):
                 dataFieldMasterList.append(self)
                 
         def assignDataFields(plan_name):
+            global dataFieldList
             dataFieldList = []
             print('assigning Data Fields')
             for d in dataFieldMasterList:
@@ -716,6 +718,7 @@ class StattoRedistrict(object):
             self.initialiseActivePlan(layers[1])
             self.dlgparameters.cmbActiveLayer.setCurrentIndex(self.dlgparameters.cmbActiveLayer.findText(self.activeLayer.name()))
             self.setParameters()
+            self.updateFieldTable(layers[1])
         else:
 #error message this
             return
@@ -782,10 +785,11 @@ class StattoRedistrict(object):
                 f.write(str(dp.distfield) + '\n')
                 f.write(str(dp.geofield) + '\n')
                 counter = 0
-                for d in dp.dataFieldList:
+                for d in dataFieldMasterList:
                         counter = counter + 1
                 f.write(str(counter) + '\n')
-                for d in dp.dataFieldList:
+                for d in dataFieldMasterList:
+                    if d.plan == 'qgisRedistricterPendingField' or d.plan == dp.name:
                         f.write(d.name + '\n')
                         f.write(str(d.type) + '\n')
 
@@ -865,8 +869,7 @@ class StattoRedistrict(object):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline().strip()
                                 newfieldtype = int(newfieldtype)
-                                df = DataField([newfield, newfieldtype, self.planname])
-                                self.dataFieldMasterList.append(df)
+                                df = DataField([newfield, newfieldtype, self.planName])
                         loader = f.readline()
                         loader_int = int(loader)
                         for fn in range(0, loader_int):
@@ -935,7 +938,7 @@ class StattoRedistrict(object):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline()
                                 newfieldtype = int(newfieldtype)
-                                df = a.DataField([newfield, newfieldtype, a.planname])
+                                df = a.DataField([newfield, newfieldtype, a.name])
                                 a.dataFieldMasterList.append(df)
                         loader = f.readline()
                         loader_int = int(loader)
@@ -967,7 +970,6 @@ class StattoRedistrict(object):
         self.dlgparameters.inpTolerance.setValue(self.targetpoppct)
         self.dlgparameters.inpPlanName.setText(self.planName)
         self.dockwidget.cmbGeoField.setCurrentIndex((self.dockwidget.cmbGeoField.findText(self.geofield)))
-        self.updateFieldTable()
 
     def updateDistricts(self):
         try:
@@ -1057,9 +1059,16 @@ class StattoRedistrict(object):
         if self.usepopfield2 == 1:
             numDataFields = numDataFields + 2
         for d in dataFieldMasterList:
-            if d.plan == 'qgisRedistricterPendingField' or d.plan == self.activePlan.name:
+            #if the activeplan isn't set, the following nested code avoids an error: this used to be an or boolean but it didn't quite work
+            #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
+            if self.activePlan:
+                if d.plan == self.activePlan.name:
+                    numDataFields = numDataFields + 1
+                    self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
+            if d.plan == 'qgisRedistricterPendingField':
                 numDataFields = numDataFields + 1
                 self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
+
         self.attrdockwidget.tblPop.setColumnCount(5+numDataFields)
         for r in range(0,self.districts+1):
                 chkBoxItem = QTableWidgetItem()
@@ -1073,12 +1082,22 @@ class StattoRedistrict(object):
             numDataFields = numDataFields + 2
             self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%','Pop 2','To Target'])
         for d in dataFieldMasterList:
-            if d.plan == 'qgisRedistricterPendingField' or d.plan == self.activePlan.name:
+            #if the activeplan isn't set, the following nested code avoids an error: this used to be an or boolean but it didn't quite work
+            #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
+            if self.activePlan:
+                if d.plan == self.activePlan.name:
+                    numDataFields = numDataFields + 1
+                    if d.type == 1:
+                            self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
+                    else:
+                            self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name + '%'))
+            if d.plan == 'qgisRedistricterPendingField':
                 numDataFields = numDataFields + 1
                 if d.type == 1:
                         self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
                 else:
                         self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name + '%'))
+
 
         if len(districtName) == 0:
                 self.initializeElectorates()
@@ -1100,6 +1119,7 @@ class StattoRedistrict(object):
         if foundplan == 0:
             newPlan = redistrictingPlan()
             self.activePlan = newPlan
+            self.activePlan.name = self.planName
         self.cementDataFields()
         self.updateActivePlan()
         self.saveParametersToFile()
@@ -1308,13 +1328,10 @@ class StattoRedistrict(object):
         indexes = self.dlgparameters.tblDataFields.selectionModel().selectedRows()
         counter = 0
         for f in dataFieldMasterList:
-            if f.plan == 'qgisRedistricterPendingField' or f.plan == self.activePlan.name:
+            if f.plan == 'qgisRedistricterPendingField' or f.plan == self.planName:
                 for g in indexes:
                         if counter == g.row():
-                            if f.plan == 'qgisRedistricterPendingField':
-                                dataFieldMasterList.remove(f)
-                            else:
-                                self.activePlan.dataFieldList.remove(f)
+                            dataFieldMasterList.remove(f)
                 counter = counter + 1
         self.updateFieldTable()
 
@@ -1333,14 +1350,23 @@ class StattoRedistrict(object):
                     except:
                         self.iface.statusBarIface().showMessage( u"Colours could not be updated on attribute table")
 
-    def updateFieldTable(self):
+    def updateFieldTable(self,loadedPlan=None):
+        """
+        Updates the custom fields table on the parameters screen
+        """
+        print('updating field table')
         tblRows = 0
         planName = 'qgisRedistricterPendingField'       #works around if self.activePlan is None, ensures planName is only 'qgisRedistricterPendingField' if no active plan exists
         if self.activePlan:
             planName = self.activePlan.name            #works around if self.activePlan is None
+        if loadedPlan:
+            planName = loadedPlan						#this is a workaround in case someone is loading a plan from a file
         
+        print(planName)
         for d in dataFieldMasterList:
+            print(d.name + '|' + d.plan)
             if d.plan == 'qgisRedistricterPendingField' or d.plan == planName:
+                print('	found adding to table')
                 tblRows = tblRows + 1
         self.dlgparameters.tblDataFields.setRowCount(tblRows)
         self.dlgparameters.tblDataFields.setColumnCount(2)
@@ -1359,8 +1385,6 @@ class StattoRedistrict(object):
                         self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('% of field'))
                 elif d.type == 99:
                         self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('population'))
-
-
                 tblRows = tblRows + 1
         
     def updateFields(self):
@@ -1556,6 +1580,8 @@ class StattoRedistrict(object):
         districtName = {}
         districtName[0] = str("0")
         districtId[str("0")] = 0
+        districtName[-1] = "NULL"
+        districtId["NULL"] = -1
         for j in range(counter, self.districts+1):
                 districtName[counter] = str(counter)
                 districtId[str(counter)] = counter
@@ -1590,8 +1616,8 @@ class StattoRedistrict(object):
                         districtName[counter] = str(counter)
                         districtId[str(counter)] = counter
                         counter = counter + 1
-        QgsMessageLog.logMessage(format(districtName))
-        QgsMessageLog.logMessage(format(districtId))
+#        QgsMessageLog.logMessage(format(districtName))
+#        QgsMessageLog.logMessage(format(districtId))
         self.updateActivePlan()
         self.saveParametersToFile()
         self.updateFieldValues()
@@ -1721,9 +1747,12 @@ class StattoRedistrict(object):
         this function converts any custom fields the user has just created
         to being fields on the active redistricting plan
         """
+        print("cementing Data Fields")
         for d in dataFieldMasterList:
+            print(d.plan)
             if d.plan == 'qgisRedistricterPendingField':
-                d.plan == self.activePlan.name
+                d.plan = self.activePlan.name
+                print('	cemented!' + self.activePlan.name)
         
     def createNewDistrictField(self):
         layers = [tree_layer.layer() for tree_layer in QgsProject.instance().layerTreeRoot().findLayers()]
