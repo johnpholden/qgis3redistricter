@@ -1688,6 +1688,8 @@ class StattoRedistrict(object):
     def toolbtnSelectAction(self, feature):
         #QgsMessageLog.logMessage(str(feature.id()) + " updating district to " + str(feature[self.distfield]))
         self.activedistrict = feature[self.distfield]
+        if self.activedistrict == 'NULL':
+            self.activedistrict = 0
         self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
         self.dockwidget.sliderDistricts.setValue(int(districtId[str(self.activedistrict)]))
         self.canvas.unsetMapTool(self.featIdentTool)
