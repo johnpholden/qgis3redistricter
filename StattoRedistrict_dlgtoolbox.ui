@@ -65,7 +65,20 @@
     </rect>
    </property>
    <property name="text">
-    <string>Rename Electorates</string>
+    <string>Assign Electorate Names</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnSelectUnassigned">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>140</y>
+     <width>390</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Unassigned Features</string>
    </property>
   </widget>
  </widget>

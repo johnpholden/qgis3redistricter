@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>377</width>
-    <height>352</height>
+    <width>414</width>
+    <height>437</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,7 +29,7 @@
       <item>
        <widget class="QPushButton" name="btnParameters">
         <property name="text">
-         <string>Set Parameters</string>
+         <string>Plan Manager</string>
         </property>
        </widget>
       </item>
@@ -92,6 +92,13 @@ No active number of districts to create!
        </widget>
       </item>
       <item>
+       <widget class="QToolButton" name="btnFindDistrict">
+        <property name="text">
+         <string>Find</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QToolButton" name="btnSelect">
         <property name="enabled">
          <bool>true</bool>
@@ -140,26 +147,58 @@ No active number of districts to create!
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Geographic Selection Field:</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Geographic Selection Field:</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cmbGeoField"/>
+        </item>
+        <item>
+         <widget class="QToolButton" name="btnGeoSelect">
+          <property name="text">
+           <string>Select by Geo</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QComboBox" name="cmbGeoField"/>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnGeoSelect">
-        <property name="text">
-         <string>Select by Geo</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QRadioButton" name="radGeoSelectAll">
+          <property name="text">
+           <string>All Features</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radGeoSelectUnassigned">
+          <property name="text">
+           <string>Unassigned</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radGeoSelectActive">
+          <property name="text">
+           <string>Active District</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -182,18 +221,27 @@ No active number of districts to create!
         </property>
        </widget>
       </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QLabel" name="lblPreview">
+       <widget class="QToolButton" name="btnFloodFill">
         <property name="text">
-         <string/>
+         <string>Flood Select</string>
         </property>
        </widget>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="lblPreview">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
