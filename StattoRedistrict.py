@@ -855,13 +855,13 @@ class StattoRedistrict(object):
                         self.geofield = f.readline().rstrip()
                         fieldparams = int(f.readline())
 #                        self.setParameters()
-                        del dataFieldList[:]
+                        del dataFieldMasterList[:]
                         for fp in range(0, fieldparams):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline().strip()
                                 newfieldtype = int(newfieldtype)
                                 df = DataField([newfield, newfieldtype, self.planname])
-                                self.dataFieldList.append(df)
+                                self.dataFieldMasterList.append(df)
                         loader = f.readline()
                         loader_int = int(loader)
                         for fn in range(0, loader_int):
@@ -924,13 +924,13 @@ class StattoRedistrict(object):
                         a.geofield = f.readline().rstrip()
                         fieldparams = int(f.readline())
 #                        self.setParameters()
-                        del a.dataFieldList[:]
+                        del dataFieldMasterList[:]
                         for fp in range(0, fieldparams):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline()
                                 newfieldtype = int(newfieldtype)
                                 df = a.DataField([newfield, newfieldtype, a.planname])
-                                a.dataFieldList.append(df)
+                                a.dataFieldMasterList.append(df)
                         loader = f.readline()
                         loader_int = int(loader)
                         for fn in range(0, loader_int):
@@ -1050,7 +1050,8 @@ class StattoRedistrict(object):
         numDataFields = 0
         if self.usepopfield2 == 1:
             numDataFields = numDataFields + 2
-        for d in dataFieldList:
+        for d in dataFieldMasterList:
+            if f.name == 'qgisRedistricterPendingField' or f.name == self.activePlan.name:
                 numDataFields = numDataFields + 1
                 self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
         self.attrdockwidget.tblPop.setColumnCount(5+numDataFields)
@@ -1065,7 +1066,8 @@ class StattoRedistrict(object):
         if self.usepopfield2 == 1:
             numDataFields = numDataFields + 2
             self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%','Pop 2','To Target'])
-        for d in dataFieldList:
+        for d in dataFieldMasterList:
+            if f.name == 'qgisRedistricterPendingField' or f.name == self.activePlan.name:
                 numDataFields = numDataFields + 1
                 if d.type == 1:
                         self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
@@ -1126,7 +1128,7 @@ class StattoRedistrict(object):
                         layer_style['outline'] = '#000000'
                         if cat == 0:
                             layer_style['color'] = '204, 204, 204'
-                            layer_style['opacity'] = .5
+                            layer_style['opacity'] = '0.5'
                         symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
 
                         # replace default symbol layer with the configured one
