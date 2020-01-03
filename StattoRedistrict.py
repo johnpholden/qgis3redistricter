@@ -496,8 +496,10 @@ class StattoRedistrict(object):
         
         for d in dataFieldList:
             d.preview_dict = {}
+            
+        print(str(self.activedistrict))
         
-        if str(self.activedistrict) != "0":
+        if str(self.activedistrict) != "0" and str(self.activedistrict) != "NULL":
             previewDistricts[str(districtName[self.activedistrict])] = distPop[self.activedistrict]
             curselpop = distPop[self.activedistrict]
             
@@ -511,23 +513,35 @@ class StattoRedistrict(object):
             
             if str(feature[self.distfield]) != str(districtName[self.activedistrict]):
                 prevpoplock = prevpoplock + feature[self.popfield]
-                if locked[str(districtId[str(feature[self.distfield])])] == 0:
+                featId = str(feature[self.distfield])
+                if featId == 'NULL':
+                    featId = '0'
+                if locked[str(districtId[featId])] == 0:
                     newprevpop = newprevpop + feature[self.popfield]
 
                     if str(feature[self.distfield]) in previewDistricts.keys():
                         previewDistricts[str(feature[self.distfield])] = previewDistricts[str(feature[self.distfield])] - feature[self.popfield]
                         previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
                     else:
-                        previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[str(feature[self.distfield])])] - feature[self.popfield]
-                        previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
+                        if int(districtId[str(feature[self.distfield])]) > -1:
+                            #avoids errors when values are null
+                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[str(feature[self.distfield])])] - feature[self.popfield]
+                            previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
+                        else:
+                            previewDistricts[str(feature[self.distfield])] = distPop[0] - feature[self.popfield]
+                            previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
 
                     for d in dataFieldList:
                         if str(feature[self.distfield]) in d.preview_dict.items():
-                            d.preview_dict[str(feature[self.distfield])] = d.preview_dict[str(feature[self.distfield])] - d.field_sum[str(feature[self.distfield])]
+                            d.preview_dict[str(feature[self.distfield])] = d.preview_dict[str(feature[self.distfield])] - d.field_sum[int(districtId[str(feature[self.distfield])])]
                             d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
                         else:
-                            d.preview_dict[str(feature[self.distfield])] = (d.field_sum[str(feature[self.distfield])] * -1)
-                            d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
+                            if int(districtId[str(feature[self.distfield])]) > -1:
+                                d.preview_dict[str(feature[self.distfield])] = (d.field_sum[int(districtId[str(feature[self.distfield])])] * -1)
+                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
+                            else:
+                                d.preview_dict[str(feature[self.distfield])] = (d.field_sum[0] * -1)
+                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
                     
         if self.activedistrict > 0:
             strActiveDistPop = ', in district: ' + str(prevpop - prevpoplock) + ', active district +' + str(newprevpop) + ' (' + str(distPop[self.activedistrict]) + '→' + str(distPop[self.activedistrict] + newprevpop) + ')'
@@ -805,10 +819,10 @@ class StattoRedistrict(object):
         QgsMessageLog.logMessage("Locking...")
         global locked
         locked = {}
+        locked['NULL'] = 0
         for r in range(0,self.districts+1):
                 locked[districtName[r]] = 0
                 if self.attrdockwidget.tblPop.item(r,1).checkState() == Qt.Checked:
-#flock                        QgsMessageLog.logMessage((districtId[str(r)]) + " Locked")
                         locked[districtName[r]] = 1
         self.updateDistrict()
 
@@ -862,14 +876,12 @@ class StattoRedistrict(object):
                         self.distfield = f.readline().rstrip()
                         self.geofield = f.readline().rstrip()
                         fieldparams = int(f.readline())
-#                        self.setParameters()
-                        print('deleting dataFieldMasterList|LoadParameters')
-                        del dataFieldMasterList[:]
                         for fp in range(0, fieldparams):
+                        #these are loaded elsewhere (importParameters), but we still need to parse the file
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline().strip()
                                 newfieldtype = int(newfieldtype)
-                                df = DataField([newfield, newfieldtype, self.planName])
+#                                df = DataField([newfield, newfieldtype, self.planName])
                         loader = f.readline()
                         loader_int = int(loader)
                         for fn in range(0, loader_int):
@@ -885,6 +897,11 @@ class StattoRedistrict(object):
     def importParameters(self):
         global dataPlanList
         dataPlanList = []
+        
+        for d in dataFieldMasterList:
+            if d.plan != 'qgisRedistricterPendingField':
+                 dataFieldMasterList.remove(d)
+        
         try:
             if self.activeLayer:
                 f = open(self.activeLayer.source() + '.qgis.red','r')
@@ -931,9 +948,6 @@ class StattoRedistrict(object):
                         a.geofield = f.readline().rstrip()
                         fieldparams = int(f.readline())
 #                        self.setParameters()
-                        for d in dataFieldMasterList:
-                            if d.plan != 'qgisRedistricterPendingField':
-                                 dataFieldMasterList.remove(d)
                         for fp in range(0, fieldparams):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline()
@@ -1688,10 +1702,12 @@ class StattoRedistrict(object):
     def toolbtnSelectAction(self, feature):
         #QgsMessageLog.logMessage(str(feature.id()) + " updating district to " + str(feature[self.distfield]))
         self.activedistrict = feature[self.distfield]
-        if self.activedistrict == 'NULL':
-            self.activedistrict = 0
-        self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
-        self.dockwidget.sliderDistricts.setValue(int(districtId[str(self.activedistrict)]))
+        try:
+            self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
+            self.dockwidget.sliderDistricts.setValue(int(districtId[str(self.activedistrict)]))
+        except:
+            self.dockwidget.lblActiveDistrict.setText("Active District: 0")
+            self.dockwidget.sliderDistricts.setValue(0)
         self.canvas.unsetMapTool(self.featIdentTool)
         self.featIdentTool = None
 
@@ -1766,7 +1782,9 @@ class StattoRedistrict(object):
             fieldname = 'DISTRICT'
             if fieldname in field_names:
                 for i in range(1, 100):
-                    fieldname = 'DIST' + substr('00' + str(i), -2)
+                    fieldstring = ('00' + str(i))
+                    fieldstring = fieldstring[-2:]
+                    fieldname = 'DIST' + fieldstring
                     if fieldname not in field_names:
                         break
             pr = selectedLayer.dataProvider()
