@@ -188,6 +188,7 @@ class StattoRedistrict(object):
         self.targetpoplower = 0                #target pop lower bound
         self.targetpophigher = 0                #target pop upper bound
         self.planName = ''
+        self.oldPlanName = ''                   #if you start to load a new plan, but then you cancel
         self.flagNewPlan = 0
         self.activePlan = None
         self.undoAttr = {}
@@ -523,26 +524,27 @@ class StattoRedistrict(object):
                         previewDistricts[str(feature[self.distfield])] = previewDistricts[str(feature[self.distfield])] - feature[self.popfield]
                         previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
                     else:
-                        if int(districtId[str(feature[self.distfield])]) > -1:
+                        try:
                             #avoids errors when values are null
                             previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[str(feature[self.distfield])])] - feature[self.popfield]
-                            previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
-                        else:
+                            previewDistricts[str(districtId[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
+                        except:
                             previewDistricts[str(feature[self.distfield])] = distPop[0] - feature[self.popfield]
                             previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
 
+            """
                     for d in dataFieldList:
                         if str(feature[self.distfield]) in d.preview_dict.items():
                             d.preview_dict[str(feature[self.distfield])] = d.preview_dict[str(feature[self.distfield])] - d.field_sum[int(districtId[str(feature[self.distfield])])]
-                            d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
+                            d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtId[self.activedistrict])]
                         else:
-                            if int(districtId[str(feature[self.distfield])]) > -1:
+                            try:
                                 d.preview_dict[str(feature[self.distfield])] = (d.field_sum[int(districtId[str(feature[self.distfield])])] * -1)
-                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
-                            else:
+                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtId[self.activedistrict])]
+                            except:
                                 d.preview_dict[str(feature[self.distfield])] = (d.field_sum[0] * -1)
-                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtName[self.activedistrict])]
-                    
+                                d.preview_dict[str(districtName[self.activedistrict])] = d.preview_dict[str(districtName[self.activedistrict])] + d.field_sum[str(districtId[self.activedistrict])]
+            """
         if self.activedistrict > 0:
             strActiveDistPop = ', in district: ' + str(prevpop - prevpoplock) + ', active district +' + str(newprevpop) + ' (' + str(distPop[self.activedistrict]) + '→' + str(distPop[self.activedistrict] + newprevpop) + ')'
         self.dockwidget.lblPreview.setText('in selection:' + str(prevpop) + strActiveDistPop)
@@ -556,8 +558,12 @@ class StattoRedistrict(object):
             self.dlgpreview.tblPreview.setRowCount(counter+1)
             self.dlgpreview.tblPreview.setItem(counter,0,QTableWidgetItem(str(p)))
             self.dlgpreview.tblPreview.setItem(counter,1,QTableWidgetItem(str(previewDistricts[p])))
-            self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[int(districtId[p])])))
-            self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[int(districtId[p])])))
+            try:
+                self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[int(districtId[p])])))
+                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[int(districtId[p])])))
+            except:
+                self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[0])))
+                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[0])))
             counter = counter + 1
             
         self.dlgpreview.tblPreview.resizeColumnToContents(0)
@@ -833,66 +839,71 @@ class StattoRedistrict(object):
 
 
     def loadParameters(self,planName=None):
-#        try:
-#                layers = self.iface.legendInterface().layers()
-                self.dlgparameters.chkStyleMap.setChecked(False)
-                f = open(self.activeLayer.source() + '.qgis.red','r')
+        """
+        this loads a specific saved file
+        import parameters imports all plans
+        """
+        self.dlgparameters.chkStyleMap.setChecked(False)
+        f = open(self.activeLayer.source() + '.qgis.red','r')
+        planStatus = 0
+        planLoadedStatus = 0
+        for line in f:
+            line = line.strip()
+            if line == 'New Plan':
+                planStatus = 1
+            if line == 'End Plan':
                 planStatus = 0
-                planLoadedStatus = 0
-                for line in f:
-                    line = line.strip()
-                    if line == 'New Plan':
-                        planStatus = 1
-                    if line == 'End Plan':
-                        planStatus = 0
-                    if line == 'Plan Name':
-                        loadedPlanName = f.readline()
-                        self.planName = loadedPlanName
-                        planStatus = 2
-                    if line == 'Fields' and planStatus == 2 and planName == loadedPlanName:
-                        planLoadedStatus = 1
-                        self.districts = f.readline()
-                        self.districts = int(self.districts)
-                        self.totalpop = f.readline()
-                        self.totalpop = int(self.totalpop)
-                        self.targetpop = f.readline()
-                        self.targetpop = int(self.targetpop)
-                        self.targetpoppct = f.readline()
-                        self.targetpoppct = int(self.targetpoppct)
-                        self.targetpoplower = f.readline()
-                        self.targetpoplower = int(self.targetpoplower)
-                        self.targetpophigher = f.readline()
-                        self.targetpophigher = int(self.targetpophigher)
-                        self.targetpop2 = f.readline()
-                        self.targetpop2 = int(self.targetpop2)
-                        self.targetpop2pct = f.readline()
-                        self.targetpop2pct = int(self.targetpop2pct)
-                        self.targetpop2lower = f.readline()
-                        self.targetpop2lower = int(self.targetpop2lower)
-                        self.targetpop2higher = f.readline()
-                        self.targetpop2higher = int(self.targetpop2higher)
-                        self.popfield = f.readline().rstrip()
-                        self.popfield2 = f.readline().rstrip()
-                        self.distfield = f.readline().rstrip()
-                        self.geofield = f.readline().rstrip()
-                        fieldparams = int(f.readline())
-                        for fp in range(0, fieldparams):
-                        #these are loaded elsewhere (importParameters), but we still need to parse the file
-                                newfield = f.readline().rstrip()
-                                newfieldtype = f.readline().strip()
-                                newfieldtype = int(newfieldtype)
-#                                df = DataField([newfield, newfieldtype, self.planName])
-                        loader = f.readline()
-                        loader_int = int(loader)
-                        for fn in range(0, loader_int):
-                                tmpDistrictName = f.readline().rstrip()
-                                districtName[fn] = tmpDistrictName
-                                if str(tmpDistrictName) not in districtId:
-                                        districtId[str(tmpDistrictName)] = str(fn)
-    #                self.updateDistricts()
-    #                self.updateTable()
-                self.updateFieldTable()
-                f.close()
+            if line == 'Plan Name':
+                loadedPlanName = f.readline()
+                self.planName = loadedPlanName
+                planStatus = 2
+            if line == 'Fields' and planStatus == 2 and planName == loadedPlanName:
+                planLoadedStatus = 1
+                self.districts = f.readline()
+                self.districts = int(self.districts)
+                self.totalpop = f.readline()
+                self.totalpop = int(self.totalpop)
+                self.targetpop = f.readline()
+                self.targetpop = int(self.targetpop)
+                self.targetpoppct = f.readline()
+                self.targetpoppct = int(self.targetpoppct)
+                self.targetpoplower = f.readline()
+                self.targetpoplower = int(self.targetpoplower)
+                self.targetpophigher = f.readline()
+                self.targetpophigher = int(self.targetpophigher)
+                self.targetpop2 = f.readline()
+                self.targetpop2 = int(self.targetpop2)
+                self.targetpop2pct = f.readline()
+                self.targetpop2pct = int(self.targetpop2pct)
+                self.targetpop2lower = f.readline()
+                self.targetpop2lower = int(self.targetpop2lower)
+                self.targetpop2higher = f.readline()
+                self.targetpop2higher = int(self.targetpop2higher)
+                self.popfield = f.readline().rstrip()
+                self.popfield2 = f.readline().rstrip()
+                self.distfield = f.readline().rstrip()
+                self.geofield = f.readline().rstrip()
+                fieldparams = int(f.readline())
+                for fp in range(0, fieldparams):
+                #these are loaded elsewhere (importParameters), but we still need to parse the file
+                        newfield = f.readline().rstrip()
+                        newfieldtype = f.readline().strip()
+                        newfieldtype = int(newfieldtype)
+                        df = DataField([newfield, newfieldtype, self.planName])
+                loader = f.readline()
+                loader_int = int(loader)
+                for fn in range(0, loader_int):
+                        tmpDistrictName = f.readline().rstrip()
+                        districtName[fn] = tmpDistrictName
+                        if str(tmpDistrictName) not in districtId:
+                                districtId[str(tmpDistrictName)] = str(fn)
+        self.updateFieldTable()
+        f.close()
+        del dataFieldList[:]
+        for d in dataFieldMasterList:
+            print("field:" + d.plan + '|' + self.planName)
+            if d.plan == self.planName:
+                dataFieldList.append(d)
 
     def importParameters(self):
         global dataPlanList
@@ -947,13 +958,12 @@ class StattoRedistrict(object):
                         a.distfield = f.readline().rstrip()
                         a.geofield = f.readline().rstrip()
                         fieldparams = int(f.readline())
-#                        self.setParameters()
                         for fp in range(0, fieldparams):
                                 newfield = f.readline().rstrip()
                                 newfieldtype = f.readline()
                                 newfieldtype = int(newfieldtype)
-                                df = a.DataField([newfield, newfieldtype, a.name])
-                                a.dataFieldMasterList.append(df)
+                                print("data field found")
+                                df = DataField([newfield, newfieldtype, a.name])
                         loader = f.readline()
                         loader_int = int(loader)
                         for fn in range(0, loader_int):
