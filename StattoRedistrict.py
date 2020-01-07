@@ -614,7 +614,6 @@ class StattoRedistrict(object):
                         d.field_sum[int(districtId[str(feature[self.distfield])])] = d.field_sum[int(districtId[str(feature[self.distfield])])] - feature[d.name]
                         d.total_sum = d.total_sum - feature[d.name]
                 except:
-                        QgsMessageLog.logMessage(feature[d.name])
                         d.field_sum[0] = d.field_sum[0] - feature[d.name]
                         d.total_sum = d.total_sum - feature[d.name]
 
