@@ -783,43 +783,47 @@ class StattoRedistrict(object):
         f.close()
         """
 
-        f = open(self.activeLayer.source() + '.qgis.red','w')
-        for dp in dataPlanList:
-            if dp.layerName == self.activeLayer.name():
-                f.write('New Plan\n')
-                f.write('Plan Name\n')
-                f.write(str(dp.name) + '\n')
-                f.write('Fields\n')
-                f.write(str(dp.districts) + '\n')
-                f.write(str(dp.totalpop) + '\n')
-                f.write(str(dp.targetpop) + '\n')
-                f.write(str(dp.targetpoppct) + '\n')
-                f.write(str(dp.targetpoplower) + '\n')
-                f.write(str(dp.targetpophigher) + '\n')
-                f.write(str(dp.targetpop2) + '\n')
-                f.write(str(dp.targetpop2pct) + '\n')
-                f.write(str(dp.targetpop2lower) + '\n')
-                f.write(str(dp.targetpop2higher) + '\n')
-                f.write(str(dp.popfield) + '\n')
-                f.write(str(dp.popfield2) + '\n')
-                f.write(str(dp.distfield) + '\n')
-                f.write(str(dp.geofield) + '\n')
-                counter = 0
-                for d in dataFieldMasterList:
-                        counter = counter + 1
-                f.write(str(counter) + '\n')
-                for d in dataFieldMasterList:
-                    if d.plan == 'qgisRedistricterPendingField' or d.plan == dp.name:
-                        f.write(d.name + '\n')
-                        f.write(str(d.type) + '\n')
+        try:
+            f = open(self.activeLayer.source() + '.qgis.red','w')
+            for dp in dataPlanList:
+                if dp.layerName == self.activeLayer.name():
+                    f.write('New Plan\n')
+                    f.write('Plan Name\n')
+                    f.write(str(dp.name) + '\n')
+                    f.write('Fields\n')
+                    f.write(str(dp.districts) + '\n')
+                    f.write(str(dp.totalpop) + '\n')
+                    f.write(str(dp.targetpop) + '\n')
+                    f.write(str(dp.targetpoppct) + '\n')
+                    f.write(str(dp.targetpoplower) + '\n')
+                    f.write(str(dp.targetpophigher) + '\n')
+                    f.write(str(dp.targetpop2) + '\n')
+                    f.write(str(dp.targetpop2pct) + '\n')
+                    f.write(str(dp.targetpop2lower) + '\n')
+                    f.write(str(dp.targetpop2higher) + '\n')
+                    f.write(str(dp.popfield) + '\n')
+                    f.write(str(dp.popfield2) + '\n')
+                    f.write(str(dp.distfield) + '\n')
+                    f.write(str(dp.geofield) + '\n')
+                    counter = 0
+                    for d in dataFieldMasterList:
+                            counter = counter + 1
+                    f.write(str(counter) + '\n')
+                    for d in dataFieldMasterList:
+                        if d.plan == 'qgisRedistricterPendingField' or d.plan == dp.name:
+                            f.write(d.name + '\n')
+                            f.write(str(d.type) + '\n')
 
-                f.write(str(len(dp.districtName)) + '\n')
-                for r in dp.districtName:
-                        f.write(str(dp.districtName[r]) + '\n')
-                f.write(str(len(dp.locked)) + '\n')
-                f.write('End Plan\n')
-        f.close()
-        QgsMessageLog.logMessage("Parameters file saved!")
+                    f.write(str(len(dp.districtName)) + '\n')
+                    for r in dp.districtName:
+                            f.write(str(dp.districtName[r]) + '\n')
+                    f.write(str(len(dp.locked)) + '\n')
+                    f.write('End Plan\n')
+            f.close()
+#            QgsMessageLog.logMessage("Parameters file saved!")
+        except:
+            QgsMessageLog.logMessage("Parameters file could not be saved")
+
 
     def updateLockedFields(self):
         QgsMessageLog.logMessage("Locking...")
