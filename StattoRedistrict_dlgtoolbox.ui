@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Export Attribute Table to CSV</string>
+    <string>Export Redistricting Attribute Table to CSV</string>
    </property>
   </widget>
   <widget class="QPushButton" name="btnEnclaves">
@@ -48,7 +48,7 @@
      <x>20</x>
      <y>60</y>
      <width>391</width>
-     <height>27</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
@@ -61,7 +61,7 @@
      <x>20</x>
      <y>100</y>
      <width>390</width>
-     <height>27</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
@@ -74,12 +74,77 @@
      <x>20</x>
      <y>140</y>
      <width>390</width>
-     <height>27</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
     <string>Select Unassigned Features</string>
    </property>
+  </widget>
+  <widget class="QPushButton" name="btnRefreshAttributeTable">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>180</y>
+     <width>390</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Refresh Attribute Table (after manual changes)</string>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>220</y>
+     <width>391</width>
+     <height>80</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Sunken</enum>
+   </property>
+   <widget class="QPushButton" name="btnExportCrosstabToCsv">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>391</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Export Cross-Tabbed Attribute Table to CSV</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="cmbCrossTab">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>0</y>
+      <width>231</width>
+      <height>27</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>-4</y>
+      <width>151</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Column to Cross-tab:</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>

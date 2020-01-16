@@ -43,6 +43,7 @@ from .StattoRedistrict_dlgelectorates import StattoRedistrictDlgElectorates
 from .StattoRedistrict_dlgplanmanager import StattoRedistrictDlgPlanManager
 from .StattoRedistrict_dlgpreview import StattoRedistrictDlgPreview
 import os.path
+import gc
 
 #define our list containers
 dataFieldList = []				#the list of fields used by the currently active project
@@ -56,6 +57,7 @@ distPop = {}					#the population of the district ID
 distPop2 = {}					#the population of the district ID, field number two
 planManagerList = []			#list of plans for the plan manager
 activePlanName = ''				#the name of the currently active loaded plan
+floodFillIndex = None
 
 #define our DataField class
 #this is used to hold the user defined columns in the plan
@@ -103,6 +105,7 @@ class redistrictingPlan(object):
         targetpoppct = 0
         targetpophigher = 0
         targetpoplower = 0
+        totalpop2 = 0
         targetpop2 = 0
         targetpop2pct = 0
         targetpop2higher = 0
@@ -183,10 +186,15 @@ class StattoRedistrict(object):
         self.distfield = None                #the district field in the database
         self.geofield = None
         self.totalpop = 0                #the total population
+        self.totalpop2 = 0
         self.targetpop = 0                #the target population
         self.targetpoppct = 0                #target population percentage tolerance
         self.targetpoplower = 0                #target pop lower bound
         self.targetpophigher = 0                #target pop upper bound
+        self.targetpop2 = 0                #the target population
+        self.targetpop2pct = 0                #target population percentage tolerance
+        self.targetpop2lower = 0                #target pop lower bound
+        self.targetpop2higher = 0                #target pop upper bound
         self.planName = ''
         self.oldPlanName = ''                   #if you start to load a new plan, but then you cancel
         self.flagNewPlan = 0
@@ -428,6 +436,8 @@ class StattoRedistrict(object):
             self.dlgtoolbox.btnExportToCsv.clicked.connect(self.exportToCsv)
             self.dlgtoolbox.btnRename.clicked.connect(self.renameElectorates)
             self.dlgtoolbox.btnSelectUnassigned.clicked.connect(self.selectUnassigned)
+            self.dlgtoolbox.btnRefreshAttributeTable.clicked.connect(self.refreshTable)
+            self.dlgtoolbox.btnExportCrosstabToCsv.clicked.connect(self.exportCrosstabToCsv)
 
             self.dlgelectorates.boxButton.button(QDialogButtonBox.Ok).clicked.connect(self.updateElectorates)
 
@@ -457,29 +467,52 @@ class StattoRedistrict(object):
         """Updates the attributes of the the data table when the Update Selected Polygons feature is clicked"""
         self.dockwidget.btnUpdate.setEnabled(False)
         global locked
-        self.undoAttr = {}
+        self.undoAttr.clear()
+        gc.collect()
+        
         self.dockwidget.lblPreview.setText('')
         counter = 0     #was originally in the if statement, but this crashes the status bar update if locked
+        totfeatures = self.activeLayer.selectedFeatureCount()   #counts the number of features
         if locked[districtName[self.activedistrict]] == 0:
             selection = self.activeLayer.selectedFeatures()
             field_id = self.activeLayer.fields().indexFromName(self.distfield)
             self.activeLayer.startEditing()
             self.iface.statusBarIface().showMessage(u"Updating features... ")
-            for feature in selection:
+            field_id = self.activeLayer.fields().indexFromName(self.distfield)
+            if totfeatures < 1500:
+                #after a certain point, see if it's faster to bifurcate attribute updates
+                for feature in selection:
+                        try:
+                                if locked[str(districtId[str(feature[self.distfield])])] == 0:
+                                        self.undoAttr[feature.id()] = feature[self.distfield]
+                                        self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
+    #                                    self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                        except:
+                                self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
+    #                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                        counter = counter + 1
+                        if counter % 250 == 0:
+                            self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
+                            QCoreApplication.processEvents()
+    #                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
+            else:
+                for feature in selection:
                     try:
-                            if locked[str(districtId[str(feature[self.distfield])])] == 0:
-                                    self.undoAttr[feature.id()] = feature[self.distfield]
-                                    self.updateFeatureValue(feature, districtName[self.activedistrict])
+                        if locked[str(districtId[str(feature[self.distfield])])] == 0:
+                            self.undoAttr[feature.id()] = feature[self.distfield]
+                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
                     except:
-                            self.updateFeatureValue(feature, districtName[self.activedistrict])
-                    counter = counter + 1
-                    if counter % 500 == 0:
-                        self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
-                        QCoreApplication.processEvents()
-#                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
+#                            self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
+                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                            counter = counter + 1
+                            if counter % 250 == 0:
+                                self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
+                                QCoreApplication.processEvents()
+                self.iface.statusBarIface().showMessage( u"Updating population table" )
+                QCoreApplication.processEvents()
+                self.updateFieldValues()
             self.iface.statusBarIface().showMessage( u"Committing changes to table" )
             QCoreApplication.processEvents()
-
             self.activeLayer.commitChanges()
         self.activeLayer.removeSelection()
         self.updateTable()
@@ -494,9 +527,10 @@ class StattoRedistrict(object):
         strActiveDistPop = ''
         
         previewDistricts = {}
+        gc.collect()
         
         for d in dataFieldList:
-            d.preview_dict = {}
+            d.preview_dict.clear()
             
         print(str(self.activedistrict))
         
@@ -526,8 +560,8 @@ class StattoRedistrict(object):
                     else:
                         try:
                             #avoids errors when values are null
-                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[str(feature[self.distfield])])] - feature[self.popfield]
-                            previewDistricts[str(districtId[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
+                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId(feature[self.distfield]))] - feature[self.popfield]
+                            previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
                         except:
                             previewDistricts[str(feature[self.distfield])] = distPop[0] - feature[self.popfield]
                             previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
@@ -550,8 +584,8 @@ class StattoRedistrict(object):
         self.dockwidget.lblPreview.setText('in selection:' + str(prevpop) + strActiveDistPop)
         
         
-        self.dlgpreview.tblPreview.setColumnCount(4)
-        self.dlgpreview.tblPreview.setHorizontalHeaderLabels(['District','New Pop','Old Pop','Change'])
+        self.dlgpreview.tblPreview.setColumnCount(5)
+        self.dlgpreview.tblPreview.setHorizontalHeaderLabels(['District','New Pop','Old Pop','Change','Dev%'])
         self.dlgpreview.show()
         counter = 0
         for p in previewDistricts:
@@ -564,12 +598,21 @@ class StattoRedistrict(object):
             except:
                 self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[0])))
                 self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[0])))
+            try:
+                if self.targetpop > 0:
+                    self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
+                else:
+                    self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+            except:
+                self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+
             counter = counter + 1
             
         self.dlgpreview.tblPreview.resizeColumnToContents(0)
         self.dlgpreview.tblPreview.resizeColumnToContents(1)
         self.dlgpreview.tblPreview.resizeColumnToContents(2)
         self.dlgpreview.tblPreview.resizeColumnToContents(3)
+        self.dlgpreview.tblPreview.resizeColumnToContents(4)
 
 
 
@@ -578,15 +621,31 @@ class StattoRedistrict(object):
         for feature, value in self.undoAttr.items():
             self.updateFeatureValue(self.activeLayer.getFeature(feature), value)
         self.activeLayer.commitChanges()
-        self.undoAttr = {}
+        self.undoAttr.clear()
         self.updateTable()
         self.dockwidget.btnUndo.setEnabled(False)
 
-    def updateFeatureValue(self, feature, change_to):
+    def updateFeatureValuev2(self, feature, change_to, field_id):
+        self.activeLayer.changeAttributeValue(feature.id(),field_id,change_to)
+        newId = int(districtId[str(change_to)])
+        try:
+                distPop[newId] = distPop[newId] + feature[self.popfield]
+#                QgsMessageLog.logMessage("to: " + str(newId))
+        except:
+                try:
+                        distPop[0] = distPop[0] + feature[self.popfield]
+                except:
+                        errors = 1
+
+#    def updateAttributesUsingSQL(self):
+#        for p in (0, self.districts+1):
+#           district_pop = QgsExpression('sum(')
+
+    def updateFeatureValue(self, feature, change_to,field_id):
 #        QgsMessageLog.logMessage("updating feature value")
         global distPop
         global distPop2
-        field_id = self.activeLayer.fields().indexFromName(self.distfield)
+#        field_id = self.activeLayer.fields().indexFromName(self.distfield)
         try:
                 distPop[int(districtId[str(feature[self.distfield])])] = distPop[int(districtId[str(feature[self.distfield])])] - feature[self.popfield] # feature[self.popfield]
 #                QgsMessageLog.logMessage("from: " + str(districtId[str(feature[self.distfield])]))
@@ -597,6 +656,7 @@ class StattoRedistrict(object):
                 except:
                         errors = 1
 #                        QgsMessageLog.logMessage(self.distfield + " failed on load")
+
         if self.usepopfield2 == 1:
             try:
                     distPop2[int(districtId[str(feature[self.distfield])])] = distPop2[int(districtId[str(feature[self.distfield])])] - feature[self.popfield2] # feature[self.popfield]
@@ -744,6 +804,12 @@ class StattoRedistrict(object):
 
 
     def openToolbox(self):
+    
+        self.dlgtoolbox.cmbCrossTab.clear()
+        if hasattr(self.activeLayer, 'fields'):
+            fields = self.activeLayer.fields()
+            field_names = [field.name() for field in fields]
+            self.dlgtoolbox.cmbCrossTab.addItems(field_names)
         self.dlgtoolbox.show()
 
     def saveParametersToFile(self):
@@ -806,6 +872,7 @@ class StattoRedistrict(object):
                     f.write(str(dp.geofield) + '\n')
                     counter = 0
                     for d in dataFieldMasterList:
+                        if d.plan == 'qgisRedistricterPendingField' or d.plan == dp.name:
                             counter = counter + 1
                     f.write(str(counter) + '\n')
                     for d in dataFieldMasterList:
@@ -993,6 +1060,7 @@ class StattoRedistrict(object):
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText('None')))
         else:
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText(self.popfield2)))
+            self.dlgparameters.chkIgnoreSecond.setChecked(False)
         self.dlgparameters.cmbDistField.setCurrentIndex((self.dlgparameters.cmbDistField.findText(self.distfield)))
         self.dlgparameters.inpTolerance.setValue(self.targetpoppct)
         self.dlgparameters.inpPlanName.setText(self.planName)
@@ -1070,12 +1138,20 @@ class StattoRedistrict(object):
         self.targetpop = 0
         for feature in self.activeLayer.getFeatures():
                 self.totalpop = self.totalpop + int(feature[self.popfield])
+                if self.usepopfield2 == 1:
+                    self.totalpop2 = self.totalpop2 + int(feature[self.popfield2])
         self.targetpop = int(self.totalpop / self.districts)
         self.targetpoppct = self.dlgparameters.inpTolerance.value()
         self.targetpoppct2 = self.dlgparameters.inpTolerance_2.value()
         targetpoprem = int((self.targetpop / 100) * self.targetpoppct)
         self.targetpoplower = int(self.targetpop - targetpoprem)
         self.targetpophigher = int(self.targetpop + targetpoprem + 1)
+        if self.usepopfield2 == 1:
+            self.targetpop2 = int(self.totalpop2 / self.districts)
+            targetpoprem2 = int((self.targetpop2 / 100) * self.targetpoppct2)
+            self.targetpop2lower = int(self.targetpop2 - targetpoprem2)
+            self.targetpop2higher = int(self.targetpop2 + targetpoprem2 + 1)
+
 
         self.iface.statusBarIface().showMessage( u"Variables initialised, updating front-end..." )
         QCoreApplication.processEvents()
@@ -1084,7 +1160,7 @@ class StattoRedistrict(object):
         self.attrdockwidget.tblPop.setRowCount(self.districts+1)
         numDataFields = 0
         if self.usepopfield2 == 1:
-            numDataFields = numDataFields + 2
+            numDataFields = numDataFields + 3
         for d in dataFieldMasterList:
             #if the activeplan isn't set, the following nested code avoids an error: this used to be an or boolean but it didn't quite work
             #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
@@ -1106,8 +1182,8 @@ class StattoRedistrict(object):
         self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%'])
         numDataFields = 0
         if self.usepopfield2 == 1:
-            numDataFields = numDataFields + 2
-            self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%','Pop 2','To Target'])
+            numDataFields = numDataFields + 3
+            self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%','Pop 2','To Target','Dev%'])
         for d in dataFieldMasterList:
             #if the activeplan isn't set, the following nested code avoids an error: this used to be an or boolean but it didn't quite work
             #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
@@ -1269,10 +1345,10 @@ class StattoRedistrict(object):
 #                        QgsMessageLog.logMessage(self.distfield + " failed on load")
             if self.usepopfield2 == 1:
                 try:
-                        distPop2[int(districtId[str(feature[self.distfield])])] = distPop2[int(districtId[str(feature[self.distfield])])] + feature[self.popfield]
+                        distPop2[int(districtId[str(feature[self.distfield])])] = distPop2[int(districtId[str(feature[self.distfield])])] + feature[self.popfield2]
                 except:
                         try:
-                                distPop2[0] = distPop2[0] + feature[self.popfield]
+                                distPop2[0] = distPop2[0] + feature[self.popfield2]
                         except:
                                 errors = 1
 
@@ -1286,7 +1362,7 @@ class StattoRedistrict(object):
 
 
     def updateTable(self):
-        QgsMessageLog.logMessage("Updating Table")
+#        QgsMessageLog.logMessage("Updating Table")
         global distPop
         global distPop2
         usepopfieldflag = 0
@@ -1297,11 +1373,20 @@ class StattoRedistrict(object):
                 self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str(distPop[p])))
                 self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str(self.targetpop - distPop[p])))
                 self.attrdockwidget.tblPop.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
+                if self.usepopfield2 == 1:
+                    self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str(distPop2[p])))
+                    self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str(self.targetpop2 - distPop2[p])))
+                    self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[p]) / float(self.targetpop2)) * 100)-100,2))+'%'))
                 self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,1).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,2).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,3).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,4).setBackground(QColor(255,255,255))
+                if self.usepopfield2 == 1:
+                    self.attrdockwidget.tblPop.item(p,5).setBackground(QColor(255,255,255))
+                    self.attrdockwidget.tblPop.item(p,6).setBackground(QColor(255,255,255))
+                    self.attrdockwidget.tblPop.item(p,7).setBackground(QColor(255,255,255))
+
                 if distPop[p] >= self.targetpoplower and distPop[p] <= self.targetpophigher:
                     if usepopfieldflag == 0 or (distPop2[p] >= self.targetpop2lower and distPop2[p] <= self.targetpop2higher):
                         self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(0,200,0))
@@ -1309,13 +1394,21 @@ class StattoRedistrict(object):
                         self.attrdockwidget.tblPop.item(p,2).setBackground(QColor(0,200,0))
                         self.attrdockwidget.tblPop.item(p,3).setBackground(QColor(0,200,0))
                         self.attrdockwidget.tblPop.item(p,4).setBackground(QColor(0,200,0))
+                        if self.usepopfield2 == 1:
+                            self.attrdockwidget.tblPop.item(p,5).setBackground(QColor(0,200,0))
+                            self.attrdockwidget.tblPop.item(p,6).setBackground(QColor(0,200,0))
+                            self.attrdockwidget.tblPop.item(p,7).setBackground(QColor(0,200,0))
+
 
                 try:
                     attcol = QgsCategorizedSymbolRenderer.categoryIndexForLabel(str(districtName[p]))
                 except:
                     self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
 
+
                 rowNum = 0
+                if self.usepopfield2 == 1:
+                    rowNum = 3
                 for d in dataFieldList:
                         rowNum = rowNum + 1
                         if d.type == 1:
@@ -1325,7 +1418,7 @@ class StattoRedistrict(object):
 #                                        QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(distPop[p]))
                                         self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(round(float(float(d.field_sum[p]) / float(distPop[p])) * 100,2))+'%'))
                                 else:
-                                        self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem('0.00%'))                
+                                        self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem('0.00%'))
                         elif d.type == 3:
                                 if self.totalpop > 0:
 #                                        QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(self.totalpop))
@@ -1338,6 +1431,13 @@ class StattoRedistrict(object):
                                         self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(round(float(float(d.field_sum[p]) / float(d.total_sum)) * 100,2))+'%'))
                                 else:
                                         self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem('0.00%'))
+                        elif d.type == 5:
+                                if distPop2[p] > 0:
+#                                        QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(distPop[p]))
+                                        self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(round(float(float(d.field_sum[p]) / float(distPop2[p])) * 100,2))+'%'))
+                                else:
+                                        self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem('0.00%'))
+
 
         self.attrdockwidget.tblPop.resizeColumnToContents(0)
         self.attrdockwidget.tblPop.resizeColumnToContents(1)
@@ -1410,6 +1510,8 @@ class StattoRedistrict(object):
                         self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('% of total pop'))
                 elif d.type == 4:
                         self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('% of field'))
+                elif d.type == 5:
+                        self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('% of population 2'))
                 elif d.type == 99:
                         self.dlgparameters.tblDataFields.setItem(tblRows,1,QTableWidgetItem('population'))
                 tblRows = tblRows + 1
@@ -1439,7 +1541,7 @@ class StattoRedistrict(object):
     #        self.dlgparameters.cmbDispField1.addItems(["None"])
     #        self.dlgparameters.cmbDispField2.addItems(["None"])        
             self.dlgparameters.cmbDataField.addItems(field_names)
-        self.dlgparameters.cmbDataType.addItems(['Sum','% of Dist. Pop','% of Total Pop','% of Field'])
+        self.dlgparameters.cmbDataType.addItems(['Sum','% of Dist. Pop','% of Total Pop','% of Field','% of Pop 2'])
  #       self.dlgparameters.cmbDispField2.addItems(field_names)
         selectedLayerIndex = self.dlgparameters.cmbActiveLayer.currentIndex()
         selectedLayer = layers[selectedLayerIndex]
@@ -1526,9 +1628,92 @@ class StattoRedistrict(object):
                                         if d.total_sum > 0:
                                                 QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(d.total_sum))
                                                 rowWriter.append(str(round(float(float(d.field_sum[p]) / float(d.total_sum)) * 100,2))+'%')
+                                elif d.type == 5:
+                                        if distPop2[p] > 0:
+                                                rowWriter.append(str(round(float(float(d.field_sum[p]) / float(distPop2[p])) * 100,2))+'%')
                                         else:
                                                 rowWriter.append('0.00%')
                                 csvWriter.writerow(rowWriter)
+                                
+    def exportCrosstabToCsv(self):
+        crossTabFieldName = self.dlgtoolbox.cmbCrossTab.currentText()
+        saveFileName, __ = QFileDialog.getSaveFileName(None)
+
+        if saveFileName:
+            self.dlgtoolbox.hide()
+            self.iface.statusBarIface().showMessage( u"Creating crosstabs..." )
+            crosstabPop = {}
+            crosstabTotalPop = {}
+            #roll everything up
+            """
+#       Data fields are not supported yet, sorry :(
+        numDataFields = 0
+        for d in dataFieldList:
+                del d.field_sum[:]
+                for p in range(0,self.districts+1):
+                        d.field_sum.append(p)
+                        d.field_sum[p] = 0
+                        d.total_sum = 0
+                        numDataFields = numDataFields + 1
+            """
+            for feature in self.activeLayer.getFeatures():
+                if str(feature[crossTabFieldName]) + '|' + str(feature[self.distfield]) in crosstabPop.keys():
+                    crosstabPop[str(feature[crossTabFieldName]) + '|' + str(feature[self.distfield])] = crosstabPop[str(feature[crossTabFieldName]) + '|' + str(feature[self.distfield])] + feature[self.popfield]
+                    crosstabTotalPop[str(feature[crossTabFieldName])] = crosstabTotalPop[str(feature[crossTabFieldName])] + feature[self.popfield]
+                else:
+                    crosstabPop[str(feature[crossTabFieldName]) + '|' + str(feature[self.distfield])] = feature[self.popfield]
+                    if str(feature[crossTabFieldName]) in crosstabTotalPop.keys():
+                        crosstabTotalPop[str(feature[crossTabFieldName])] = crosstabTotalPop[str(feature[crossTabFieldName])] + feature[self.popfield]
+                    else:
+                        crosstabTotalPop[str(feature[crossTabFieldName])] = feature[self.popfield]
+
+
+            self.iface.statusBarIface().showMessage( u"Saving the file..." )
+# and then save the file
+            with open(saveFileName, 'w') as csvFile:
+                csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                headerWriter = [str(crossTabFieldName), 'District','Population','% of ' + str(crossTabFieldName)]
+#                for d in dataFieldList:
+#                        headerWriter.append(d.name)
+                csvWriter.writerow(headerWriter)
+                for key, value in sorted(crosstabPop.items()):
+                        keySplit = key.split('|')
+                        rowWriter = [keySplit[0],keySplit[1]]
+                        rowWriter.append(str(value))
+                        if crosstabTotalPop[keySplit[0]] > 0:
+                            rowWriter.append(str(value / crosstabTotalPop[keySplit[0]]))
+
+                        """
+#Fields are not yet supported, sorry
+                        for d in dataFieldList:
+                                if d.type == 1:
+                                        rowWriter.append(str(d.field_sum[p]))
+                                elif d.type == 2:
+                                        if distPop[p] > 0:
+                                                QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(distPop[p]))
+                                                rowWriter.append(str(round(float(float(d.field_sum[p]) / float(distPop[p])) * 100,2))+'%')
+                                        else:
+                                                rowWriter.append('0.00%')
+                                elif d.type == 3:
+                                        if self.totalpop > 0:
+                                                QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(self.totalpop))
+                                                rowWriter.append(str(round(float(float(d.field_sum[p]) / float(self.totalpop)) * 100,2))+'%')
+                                        else:
+                                                rowWriter.append('0.00%')
+                                elif d.type == 4:
+                                        if d.total_sum > 0:
+                                                QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(d.total_sum))
+                                                rowWriter.append(str(round(float(float(d.field_sum[p]) / float(d.total_sum)) * 100,2))+'%')
+                                elif d.type == 5:
+                                        if distPop2[p] > 0:
+                                                rowWriter.append(str(round(float(float(d.field_sum[p]) / float(distPop2[p])) * 100,2))+'%')
+                                        else:
+                                                rowWriter.append('0.00%')
+                        """
+                        csvWriter.writerow(rowWriter)
+#and release the memory
+            del crosstabPop
+            del crosstabTotalPop
 
     def enclaveRemover(self):
         field_id = self.activeLayer.fields().indexFromName(self.distfield)
@@ -1652,6 +1837,7 @@ class StattoRedistrict(object):
         self.updateLockedFields()
 
     def updateSelectedElectorate(self):
+        QgsMessageLog.logMessage("Pick a new selected electorate from the map")
         self.dockwidget.lblActiveDistrict.setText("Click on the map...")
         self.featIdentTool =  QgsMapToolIdentifyFeature(self.canvas)
         self.featIdentTool.featureIdentified.connect(self.toolbtnSelectAction)
@@ -1660,22 +1846,25 @@ class StattoRedistrict(object):
 
     def selectByFloodFill(self):
         self.dlgtoolbox.hide()
+        QgsMessageLog.logMessage("Select by flood fill active")
         self.featIdentTool =  QgsMapToolIdentifyFeature(self.canvas)
         self.featIdentTool.featureIdentified.connect(self.selectByFloodFillAction)
         self.featIdentTool.setLayer(self.activeLayer)
         self.canvas.setMapTool(self.featIdentTool)
 
+
     def selectByFloodFillAction(self, feature):
         field_id = self.activeLayer.fields().indexFromName(self.distfield)
         select_list = []
         select_list.append(feature)
-        feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
 
         QgsMessageLog.logMessage("Building spatial index...")
         # Build a spatial index
-        index = QgsSpatialIndex()
+
+        feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
+        floodFillIndex = QgsSpatialIndex()
         for f in list(feature_dict.values()):
-            index.insertFeature(f)
+            floodFillIndex.insertFeature(f)
 
         QgsMessageLog.logMessage("Finding neighbors...")
         counter = 0
@@ -1689,7 +1878,7 @@ class StattoRedistrict(object):
             # We use spatial index to find the features intersecting the bounding box
             # of the current feature. This will narrow down the features that we need
             # to check neighboring features.
-            intersecting_ids = index.intersects(geom.boundingBox())
+            intersecting_ids = floodFillIndex.intersects(geom.boundingBox())
             for intersecting_id in intersecting_ids:
                     # Look up the feature from the dictionary
                     intersecting_f = feature_dict[intersecting_id]
@@ -1707,6 +1896,7 @@ class StattoRedistrict(object):
 
     def selectByGeography(self):
         self.dlgtoolbox.hide()
+        QgsMessageLog.logMessage("Select by geography active")
         self.featIdentTool =  QgsMapToolIdentifyFeature(self.canvas)
         self.featIdentTool.featureIdentified.connect(self.selectByGeographyAction)
         self.featIdentTool.setLayer(self.activeLayer)
@@ -1784,6 +1974,10 @@ class StattoRedistrict(object):
             if d.plan == 'qgisRedistricterPendingField':
                 d.plan = self.activePlan.name
                 print('	cemented!' + self.activePlan.name)
+                
+    def refreshTable(self):
+        self.updateFieldValues()
+        self.updateTable()
         
     def createNewDistrictField(self):
         layers = [tree_layer.layer() for tree_layer in QgsProject.instance().layerTreeRoot().findLayers()]
