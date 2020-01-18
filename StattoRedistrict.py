@@ -1986,7 +1986,7 @@ class StattoRedistrict(object):
         self.updateFieldValues()
         self.updateTable()
         
-    def updatePanelAndSaveParameters()
+    def updatePanelAndSaveParameters():
         self.saveParameters()
         self.dockwidget.btnToolbox.SetEnabled(True)
         self.dockwidget.btnActiveDistrictMinus.SetEnabled(True)
