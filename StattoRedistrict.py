@@ -427,7 +427,7 @@ class StattoRedistrict(object):
             self.dlgparameters.cmbActiveLayer.currentIndexChanged.connect(self.updateFields)
 
 #parameters event triggers
-            self.dlgparameters.boxButton.button(QDialogButtonBox.Ok).clicked.connect(self.saveParameters)
+            self.dlgparameters.boxButton.button(QDialogButtonBox.Ok).clicked.connect(self.updatePanelAndSaveParameters)
             self.dlgparameters.btnAddDataField.clicked.connect(self.addDataField)
             self.dlgparameters.btnRemoveDataField.clicked.connect(self.removeDataField)
             self.dlgparameters.btnCreateNewField.clicked.connect(self.createNewDistrictField)
@@ -600,11 +600,11 @@ class StattoRedistrict(object):
                 self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[0])))
             try:
                 if self.targetpop > 0:
-                    self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
+                    self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 else:
-                    self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+                    self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
             except:
-                self.attrdockwidget.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+                self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
 
             counter = counter + 1
             
@@ -618,8 +618,9 @@ class StattoRedistrict(object):
 
     def undoLast(self):
         self.activeLayer.startEditing()
+        field_id = self.activeLayer.fields().indexFromName(self.distfield)
         for feature, value in self.undoAttr.items():
-            self.updateFeatureValue(self.activeLayer.getFeature(feature), value)
+            self.updateFeatureValue(self.activeLayer.getFeature(feature), value, field_id)
         self.activeLayer.commitChanges()
         self.undoAttr.clear()
         self.updateTable()
@@ -1063,6 +1064,7 @@ class StattoRedistrict(object):
             self.dlgparameters.chkIgnoreSecond.setChecked(False)
         self.dlgparameters.cmbDistField.setCurrentIndex((self.dlgparameters.cmbDistField.findText(self.distfield)))
         self.dlgparameters.inpTolerance.setValue(self.targetpoppct)
+        self.dlgparameters.inpTolerance_2.setValue(self.targetpop2pct)
         self.dlgparameters.inpPlanName.setText(self.planName)
         self.dockwidget.cmbGeoField.setCurrentIndex((self.dockwidget.cmbGeoField.findText(self.geofield)))
 
@@ -1642,6 +1644,7 @@ class StattoRedistrict(object):
         if saveFileName:
             self.dlgtoolbox.hide()
             self.iface.statusBarIface().showMessage( u"Creating crosstabs..." )
+            QCoreApplication.processEvents()
             crosstabPop = {}
             crosstabTotalPop = {}
             #roll everything up
@@ -1669,6 +1672,7 @@ class StattoRedistrict(object):
 
 
             self.iface.statusBarIface().showMessage( u"Saving the file..." )
+            QCoreApplication.processEvents()
 # and then save the file
             with open(saveFileName, 'w') as csvFile:
                 csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
@@ -1682,6 +1686,8 @@ class StattoRedistrict(object):
                         rowWriter.append(str(value))
                         if crosstabTotalPop[keySplit[0]] > 0:
                             rowWriter.append(str(value / crosstabTotalPop[keySplit[0]]))
+                        if distPop[int(districtId[keySplit[1]])] > 0:
+                            rowWriter.append(str(value / distPop[int(districtId[keySplit[1]])]))
 
                         """
 #Fields are not yet supported, sorry
@@ -1714,6 +1720,7 @@ class StattoRedistrict(object):
 #and release the memory
             del crosstabPop
             del crosstabTotalPop
+            self.iface.statusBarIface().showMessage( u"...crosstab file saved." )
 
     def enclaveRemover(self):
         field_id = self.activeLayer.fields().indexFromName(self.distfield)
@@ -1978,6 +1985,19 @@ class StattoRedistrict(object):
     def refreshTable(self):
         self.updateFieldValues()
         self.updateTable()
+        
+    def updatePanelAndSaveParameters()
+        self.saveParameters()
+        self.dockwidget.btnToolbox.SetEnabled(True)
+        self.dockwidget.btnActiveDistrictMinus.SetEnabled(True)
+        self.dockwidget.btnActiveDistrictPlus.SetEnabled(True)
+        self.dockwidget.btnEraser.SetEnabled(True)
+        self.dockwidget.btnFindDistrict.SetEnabled(True)
+        self.dockwidget.btnSelect.SetEnabled(True)
+        self.dockwidget.btnGeoSelect.SetEnabled(True)
+        self.dockwidget.btnFloodFill.SetEnabled(True)
+        self.dockwidget.btnPreview.SetEnabled(True)
+        self.dockwidget.btnUpdate.SetEnabled(True)
         
     def createNewDistrictField(self):
         layers = [tree_layer.layer() for tree_layer in QgsProject.instance().layerTreeRoot().findLayers()]

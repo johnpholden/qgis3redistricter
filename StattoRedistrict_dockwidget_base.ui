@@ -35,6 +35,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="btnToolbox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Toolbox</string>
         </property>
@@ -63,6 +66,9 @@ No active number of districts to create!
     </item>
     <item>
      <widget class="QPushButton" name="btnUpdate">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
        <string>Update Selected Polygons</string>
       </property>
@@ -72,6 +78,9 @@ No active number of districts to create!
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QToolButton" name="btnActiveDistrictMinus">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string> - </string>
         </property>
@@ -79,6 +88,9 @@ No active number of districts to create!
       </item>
       <item>
        <widget class="QToolButton" name="btnActiveDistrictPlus">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>+</string>
         </property>
@@ -93,6 +105,9 @@ No active number of districts to create!
       </item>
       <item>
        <widget class="QToolButton" name="btnFindDistrict">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Find</string>
         </property>
@@ -101,7 +116,7 @@ No active number of districts to create!
       <item>
        <widget class="QToolButton" name="btnSelect">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="text">
          <string>Select on Map</string>
@@ -110,6 +125,9 @@ No active number of districts to create!
       </item>
       <item>
        <widget class="QToolButton" name="btnEraser">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Erase</string>
         </property>
@@ -165,6 +183,9 @@ No active number of districts to create!
         </item>
         <item>
          <widget class="QToolButton" name="btnGeoSelect">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Select by Geo</string>
           </property>
@@ -206,6 +227,9 @@ No active number of districts to create!
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <item>
        <widget class="QToolButton" name="btnPreview">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Preview Selection</string>
         </property>
@@ -223,6 +247,9 @@ No active number of districts to create!
       </item>
       <item>
        <widget class="QToolButton" name="btnFloodFill">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
          <string>Flood Select</string>
         </property>
