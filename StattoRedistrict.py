@@ -474,43 +474,38 @@ class StattoRedistrict(object):
         counter = 0     #was originally in the if statement, but this crashes the status bar update if locked
         totfeatures = self.activeLayer.selectedFeatureCount()   #counts the number of features
         if locked[districtName[self.activedistrict]] == 0:
-            selection = self.activeLayer.selectedFeatures()
+            
+            
+            ids = self.activeLayer.selectedFeatureIds()
+            request = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
+            request.setFilterFids(ids)
+            
             field_id = self.activeLayer.fields().indexFromName(self.distfield)
             self.activeLayer.startEditing()
             self.iface.statusBarIface().showMessage(u"Updating features... ")
             field_id = self.activeLayer.fields().indexFromName(self.distfield)
-            if totfeatures < 1500:
                 #after a certain point, see if it's faster to bifurcate attribute updates
-                for feature in selection:
-                        try:
-                                if locked[str(districtId[str(feature[self.distfield])])] == 0:
-                                        self.undoAttr[feature.id()] = feature[self.distfield]
-                                        self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
-    #                                    self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
-                        except:
-                                self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
-    #                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
-                        counter = counter + 1
-                        if counter % 250 == 0:
-                            self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
-                            QCoreApplication.processEvents()
-    #                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
-            else:
-                for feature in selection:
+            for feature in self.activeLayer.getFeatures(request):
                     try:
-                        if locked[str(districtId[str(feature[self.distfield])])] == 0:
-                            self.undoAttr[feature.id()] = feature[self.distfield]
-                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                            if locked[str(districtId[str(feature[self.distfield])])] == 0:
+                                    self.undoAttr[feature.id()] = feature[self.distfield]
+                                    self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
+#                                    self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                                    self.activeLayer.commitChanges()
+                                    self.activeLayer.startEditing()
                     except:
-#                            self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
-                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
-                            counter = counter + 1
-                            if counter % 250 == 0:
-                                self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
-                                QCoreApplication.processEvents()
-                self.iface.statusBarIface().showMessage( u"Updating population table" )
-                QCoreApplication.processEvents()
-                self.updateFieldValues()
+                            self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
+                            self.activeLayer.commitChanges()
+                            self.activeLayer.startEditing()
+#                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
+                    counter = counter + 1
+                    if counter % 250 == 0:
+                        self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
+                        QCoreApplication.processEvents()
+#                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
+            self.iface.statusBarIface().showMessage( u"Updating population table" )
+            QCoreApplication.processEvents()
+            self.updateFieldValues()
             self.iface.statusBarIface().showMessage( u"Committing changes to table" )
             QCoreApplication.processEvents()
             self.activeLayer.commitChanges()
@@ -600,11 +595,11 @@ class StattoRedistrict(object):
                 self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[0])))
             try:
                 if self.targetpop > 0:
-                    self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
+                    self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 else:
-                    self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+                    self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem('0.00%'))
             except:
-                self.dlgpreview.tblPreview.setItem(p,4,QTableWidgetItem('0.00%'))
+                self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem('0.00%'))
 
             counter = counter + 1
             
@@ -1336,7 +1331,8 @@ class StattoRedistrict(object):
         for p in range(0,self.districts+1):
                 distPop[p] = 0
                 distPop2[p] = 0
-        for feature in self.activeLayer.getFeatures():
+        request = QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)
+        for feature in self.activeLayer.getFeatures(request):
             try:
                     distPop[int(districtId[str(feature[self.distfield])])] = distPop[int(districtId[str(feature[self.distfield])])] + feature[self.popfield]
             except:
@@ -1986,18 +1982,18 @@ class StattoRedistrict(object):
         self.updateFieldValues()
         self.updateTable()
         
-    def updatePanelAndSaveParameters():
+    def updatePanelAndSaveParameters(self):
         self.saveParameters()
-        self.dockwidget.btnToolbox.SetEnabled(True)
-        self.dockwidget.btnActiveDistrictMinus.SetEnabled(True)
-        self.dockwidget.btnActiveDistrictPlus.SetEnabled(True)
-        self.dockwidget.btnEraser.SetEnabled(True)
-        self.dockwidget.btnFindDistrict.SetEnabled(True)
-        self.dockwidget.btnSelect.SetEnabled(True)
-        self.dockwidget.btnGeoSelect.SetEnabled(True)
-        self.dockwidget.btnFloodFill.SetEnabled(True)
-        self.dockwidget.btnPreview.SetEnabled(True)
-        self.dockwidget.btnUpdate.SetEnabled(True)
+        self.dockwidget.btnToolbox.setEnabled(True)
+        self.dockwidget.btnActiveDistrictMinus.setEnabled(True)
+        self.dockwidget.btnActiveDistrictPlus.setEnabled(True)
+        self.dockwidget.btnEraser.setEnabled(True)
+        self.dockwidget.btnFindDistrict.setEnabled(True)
+        self.dockwidget.btnSelect.setEnabled(True)
+        self.dockwidget.btnGeoSelect.setEnabled(True)
+        self.dockwidget.btnFloodFill.setEnabled(True)
+        self.dockwidget.btnPreview.setEnabled(True)
+        self.dockwidget.btnUpdate.setEnabled(True)
         
     def createNewDistrictField(self):
         layers = [tree_layer.layer() for tree_layer in QgsProject.instance().layerTreeRoot().findLayers()]
