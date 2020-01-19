@@ -491,15 +491,14 @@ class StattoRedistrict(object):
                                     self.undoAttr[feature.id()] = feature[self.distfield]
                                     self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
 #                                    self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
-                                    self.activeLayer.commitChanges()
-                                    self.activeLayer.startEditing()
+
                     except:
                             self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
-                            self.activeLayer.commitChanges()
-                            self.activeLayer.startEditing()
 #                            self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
                     counter = counter + 1
                     if counter % 250 == 0:
+                        self.activeLayer.commitChanges()
+                        self.activeLayer.startEditing()
                         self.iface.statusBarIface().showMessage( u"Still updating features... (" + str(counter) + " updated)" )
                         QCoreApplication.processEvents()
 #                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
