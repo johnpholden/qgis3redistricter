@@ -931,13 +931,13 @@ class StattoRedistrict(object):
                 self.targetpop = f.readline()
                 self.targetpop = int(self.targetpop)
                 self.targetpoppct = f.readline()
-                self.targetpoppct = int(self.targetpoppct)
+                self.targetpoppct = float(self.targetpoppct)
                 self.targetpoplower = f.readline()
                 self.targetpoplower = int(self.targetpoplower)
                 self.targetpophigher = f.readline()
                 self.targetpophigher = int(self.targetpophigher)
                 self.targetpop2 = f.readline()
-                self.targetpop2 = int(self.targetpop2)
+                self.targetpop2 = float(self.targetpop2)
                 self.targetpop2pct = f.readline()
                 self.targetpop2pct = int(self.targetpop2pct)
                 self.targetpop2lower = f.readline()
@@ -1005,13 +1005,13 @@ class StattoRedistrict(object):
                         a.targetpop = f.readline()
                         a.targetpop = int(a.targetpop)
                         a.targetpoppct = f.readline()
-                        a.targetpoppct = int(a.targetpoppct)
+                        a.targetpoppct = float(a.targetpoppct)
                         a.targetpoplower = f.readline()
                         a.targetpoplower = int(a.targetpoplower)
                         a.targetpophigher = f.readline()
                         a.targetpophigher = int(a.targetpophigher)
                         a.targetpop2 = f.readline()
-                        a.targetpop2 = int(a.targetpop2)
+                        a.targetpop2 = float(a.targetpop2)
                         a.targetpop2pct = f.readline()
                         a.targetpop2pct = int(a.targetpop2pct)
                         a.targetpop2lower = f.readline()
@@ -1051,7 +1051,7 @@ class StattoRedistrict(object):
     def setParameters(self):
         self.dlgparameters.inpDistricts.setValue(self.districts)
         self.dlgparameters.cmbPopField.setCurrentIndex((self.dlgparameters.cmbPopField.findText(self.popfield)))
-        if self.popfield2 == None:
+        if self.popfield2 == None or self.popfield2 == 'None':
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText('None')))
         else:
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText(self.popfield2)))
@@ -1134,7 +1134,7 @@ class StattoRedistrict(object):
         self.targetpop = 0
         for feature in self.activeLayer.getFeatures():
                 self.totalpop = self.totalpop + int(feature[self.popfield])
-                if self.usepopfield2 == 1:
+                if self.usepopfield2 == 1 and (self.popfield2 != None or self.popfield2 != 'None'):
                     self.totalpop2 = self.totalpop2 + int(feature[self.popfield2])
         self.targetpop = int(self.totalpop / self.districts)
         self.targetpoppct = self.dlgparameters.inpTolerance.value()
@@ -1982,6 +1982,7 @@ class StattoRedistrict(object):
         self.updateTable()
         
     def updatePanelAndSaveParameters(self):
+        self.dlgparameters.hide()
         self.saveParameters()
         self.dockwidget.btnToolbox.setEnabled(True)
         self.dockwidget.btnActiveDistrictMinus.setEnabled(True)
