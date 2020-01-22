@@ -1673,7 +1673,7 @@ class StattoRedistrict(object):
 # and then save the file
             with open(saveFileName, 'w') as csvFile:
                 csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-                headerWriter = [str(crossTabFieldName), 'District','Population','% of ' + str(, ''crossTabFieldName), '% of District']
+                headerWriter = [str(crossTabFieldName), 'District','Population','% of ' + str(crossTabFieldName), '% of District']
 #                for d in dataFieldList:
 #                        headerWriter.append(d.name)
                 csvWriter.writerow(headerWriter)
