@@ -77,6 +77,8 @@ class DataField(object):
                         self.type = 2
                 elif values[1] == '% of Total Pop' or values[1] == 3:
                         self.type = 3
+                elif values[1] == '% of Dist. Pop 2' or values[1] == 5:
+                        self.type = 5
                 elif values[1] == 'Population' or values[1] == 99:
                         self.type = 99
                 else:
@@ -1538,7 +1540,7 @@ class StattoRedistrict(object):
     #        self.dlgparameters.cmbDispField1.addItems(["None"])
     #        self.dlgparameters.cmbDispField2.addItems(["None"])        
             self.dlgparameters.cmbDataField.addItems(field_names)
-        self.dlgparameters.cmbDataType.addItems(['Sum','% of Dist. Pop','% of Total Pop','% of Field','% of Pop 2'])
+        self.dlgparameters.cmbDataType.addItems(['Sum','% of Dist. Pop','% of Total Pop','% of Field','% of Dist. Pop 2'])
  #       self.dlgparameters.cmbDispField2.addItems(field_names)
         selectedLayerIndex = self.dlgparameters.cmbActiveLayer.currentIndex()
         selectedLayer = layers[selectedLayerIndex]
