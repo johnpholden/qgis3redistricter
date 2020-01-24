@@ -517,6 +517,7 @@ class StattoRedistrict(object):
         self.dockwidget.btnUpdate.setEnabled(True)
 
     def previewSelection(self):
+        global distPop
         prevpop = 0
         prevpoplock = 0
         newprevpop = 0
@@ -1603,7 +1604,9 @@ class StattoRedistrict(object):
                 for d in dataFieldList:
                         headerWriter.append(d.name)
                 csvWriter.writerow(headerWriter)
+                counter = 0
                 for p in range(0,self.districts+1):
+                    counter = counter + 1
                         rowWriter = [str(p)]
                         rowWriter.append(str(distPop[p]))
                         rowWriter.append(str(self.targetpop - distPop[p]))
@@ -1632,7 +1635,10 @@ class StattoRedistrict(object):
                                                 rowWriter.append(str(round(float(float(d.field_sum[p]) / float(distPop2[p])) * 100,2))+'%')
                                         else:
                                                 rowWriter.append('0.00%')
-                                csvWriter.writerow(rowWriter)
+                        csvWriter.writerow(rowWriter)
+            self.iface.statusBarIface().showMessage( u"File saved to " saveFileName + ". " + str(counter) + " districts exported." )
+            QCoreApplication.processEvents()
+
                                 
     def exportCrosstabToCsv(self):
         crossTabFieldName = self.dlgtoolbox.cmbCrossTab.currentText()
