@@ -1606,7 +1606,7 @@ class StattoRedistrict(object):
                 csvWriter.writerow(headerWriter)
                 counter = 0
                 for p in range(0,self.districts+1):
-                    counter = counter + 1
+                        counter = counter + 1
                         rowWriter = [str(p)]
                         rowWriter.append(str(distPop[p]))
                         rowWriter.append(str(self.targetpop - distPop[p]))
@@ -1636,7 +1636,7 @@ class StattoRedistrict(object):
                                         else:
                                                 rowWriter.append('0.00%')
                         csvWriter.writerow(rowWriter)
-            self.iface.statusBarIface().showMessage( u"File saved to " saveFileName + ". " + str(counter) + " districts exported." )
+            self.iface.statusBarIface().showMessage( u"File saved to " + saveFileName + ". " + str(counter) + " districts exported." )
             QCoreApplication.processEvents()
 
                                 
