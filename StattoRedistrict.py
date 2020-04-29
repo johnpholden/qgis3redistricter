@@ -33,6 +33,7 @@ from qgis.gui import QgsMapCanvas, QgsMapToolEmitPoint, QgsMapTool, QgsMapToolId
 from random import randrange
 from . import resources
 import csv
+import locale
 
 # Import the code for the DockWidget
 from .StattoRedistrict_dockwidget import StattoRedistrictDockWidget
@@ -44,6 +45,10 @@ from .StattoRedistrict_dlgplanmanager import StattoRedistrictDlgPlanManager
 from .StattoRedistrict_dlgpreview import StattoRedistrictDlgPreview
 import os.path
 import gc
+
+#for thousands separators
+locale.setlocale(locale.LC_ALL, '')
+print(locale.localeconv())
 
 #define our list containers
 dataFieldList = []				#the list of fields used by the currently active project
@@ -430,6 +435,7 @@ class StattoRedistrict(object):
 
 #parameters event triggers
             self.dlgparameters.boxButton.button(QDialogButtonBox.Ok).clicked.connect(self.updatePanelAndSaveParameters)
+            self.dlgparameters.boxButton.button(QDialogButtonBox.Cancel).clicked.connect(self.closeParameters)
             self.dlgparameters.btnAddDataField.clicked.connect(self.addDataField)
             self.dlgparameters.btnRemoveDataField.clicked.connect(self.removeDataField)
             self.dlgparameters.btnCreateNewField.clicked.connect(self.createNewDistrictField)
@@ -528,9 +534,7 @@ class StattoRedistrict(object):
         
         for d in dataFieldList:
             d.preview_dict.clear()
-            
-        print(str(self.activedistrict))
-        
+       
         if str(self.activedistrict) != "0" and str(self.activedistrict) != "NULL":
             previewDistricts[str(districtName[self.activedistrict])] = distPop[self.activedistrict]
             curselpop = distPop[self.activedistrict]
@@ -555,13 +559,17 @@ class StattoRedistrict(object):
                         previewDistricts[str(feature[self.distfield])] = previewDistricts[str(feature[self.distfield])] - feature[self.popfield]
                         previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
                     else:
-                        try:
+# commented out code here which wasn't working, but didn't delete it just in case - you can probably do so safely
+#                        print(str(int(districtId[feature[self.distfield]])))
+#                        try:
                             #avoids errors when values are null
-                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId(feature[self.distfield]))] - feature[self.popfield]
+                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[str(feature[self.distfield])])]
+                            previewDistricts[str(feature[self.distfield])] = previewDistricts[str(feature[self.distfield])] - feature[self.popfield]
+#                            previewDistricts[str(feature[self.distfield])] = distPop[int(districtId[feature[self.distfield]])] - feature[self.popfield]
                             previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
-                        except:
-                            previewDistricts[str(feature[self.distfield])] = distPop[0] - feature[self.popfield]
-                            previewDistricts[str(districtName[self.activedistrict])] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
+#                        except:
+#                            previewDistricts['0'] = distPop[0] - feature[self.popfield]
+#                            previewDistricts['0'] = previewDistricts[str(districtName[self.activedistrict])] + feature[self.popfield]
 
             """
                     for d in dataFieldList:
@@ -588,13 +596,13 @@ class StattoRedistrict(object):
         for p in previewDistricts:
             self.dlgpreview.tblPreview.setRowCount(counter+1)
             self.dlgpreview.tblPreview.setItem(counter,0,QTableWidgetItem(str(p)))
-            self.dlgpreview.tblPreview.setItem(counter,1,QTableWidgetItem(str(previewDistricts[p])))
-            try:
-                self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[int(districtId[p])])))
-                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[int(districtId[p])])))
-            except:
-                self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str(distPop[0])))
-                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str(previewDistricts[p] - distPop[0])))
+            self.dlgpreview.tblPreview.setItem(counter,1,QTableWidgetItem(str('{:,}'.format(previewDistricts[p]))))
+#            try:
+            self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str('{:,}'.format(distPop[int(districtId[p])]))))
+            self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str('{:,}'.format(previewDistricts[p] - distPop[int(districtId[p])]))))
+#            except:
+#                self.dlgpreview.tblPreview.setItem(counter,2,QTableWidgetItem(str('{:,}'.format(distPop[0])))(
+#                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str('{:,}'.format(previewDistricts[p] - distPop[0]))))
             try:
                 if self.targetpop > 0:
                     self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
@@ -1066,6 +1074,7 @@ class StattoRedistrict(object):
         self.dockwidget.cmbGeoField.setCurrentIndex((self.dockwidget.cmbGeoField.findText(self.geofield)))
 
     def updateDistricts(self):
+        #this associates the district ID with the district name
         try:
                 if len(districtName) < self.districts:
                         counter = 1
@@ -1078,10 +1087,11 @@ class StattoRedistrict(object):
                                         districtName[p] = str(self.districts+counter)
                                 if districtName[p] not in districtId:
                                         districtId[str(p)] = str(p)
-                        QgsMessageLog.logMessage("Updating districts:")
-                        QgsMessageLog.logMessage(format(districtName))
-                        QgsMessageLog.logMessage(format(districtId))
+#                        QgsMessageLog.logMessage("Updating districts:")
+#                        QgsMessageLog.logMessage(format(districtName))
+#                        QgsMessageLog.logMessage(format(districtId))
         except:
+#               do not comment out the next line, the QgsMessageLog throws the error
                 QgsMessageLog.logMessage("No map loaded")
 
 
@@ -1155,7 +1165,7 @@ class StattoRedistrict(object):
         self.iface.statusBarIface().showMessage( u"Variables initialised, updating front-end..." )
         QCoreApplication.processEvents()
 
-        self.dockwidget.lblMainInfo.setText("Active Layer: " + self.activeLayer.name() + "\nActive District Field: " + self.distfield + "\nTarget Population: " + str(self.targetpop) + " (" + str(self.targetpoplower) + ", " + str(self.targetpophigher) + ")")
+        self.dockwidget.lblMainInfo.setText("Active Layer: " + self.activeLayer.name() + "\nActive District Field: " + self.distfield + "\nTarget Population: " + str('{:,}'.format(self.targetpop)) + " (" + str('{:,}'.format(self.targetpoplower)) + "-" + str('{:,}'.format(self.targetpophigher)) + ")")
         self.attrdockwidget.tblPop.setRowCount(self.districts+1)
         numDataFields = 0
         if self.usepopfield2 == 1:
@@ -1276,12 +1286,13 @@ class StattoRedistrict(object):
     def updateDistrict(self):
         self.activedistrict = self.dockwidget.sliderDistricts.value()
         try:
-            QgsMessageLog.logMessage("Active District:" + str(districtName[self.activedistrict]))
+#            QgsMessageLog.logMessage("Active District:" + str(districtName[self.activedistrict]))
             lkd = ''
             if locked[districtName[self.activedistrict]] == 1:
                 lkd = ' LOCKED!'
             self.dockwidget.lblActiveDistrict.setText("Active district: " + str(districtName[self.activedistrict]) + lkd)
         except:
+#           commenting out the next line borks the try:except
             QgsMessageLog.logMessage("District failed to update")
 
     def updateDecreaseDistrictIncrement(self):
@@ -1319,7 +1330,7 @@ class StattoRedistrict(object):
     def updateFieldValues(self):
         global distPop
         global distPop2
-        QgsMessageLog.logMessage("Updating Field Values")
+#        QgsMessageLog.logMessage("Updating Field Values")
 #        QgsMessageLog.logMessage(format(districtName))
 #        QgsMessageLog.logMessage(format(districtId))
         numDataFields = 0
@@ -1370,12 +1381,13 @@ class StattoRedistrict(object):
             usepopfieldflag = 1
         for p in range(0,self.districts+1):
                 self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem(str(districtName[p])))
-                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str(distPop[p])))
-                self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str(self.targetpop - distPop[p])))
+                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str('{:,}'.format(distPop[p]))))
+#                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str(distPop[p])))
+                self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:,}'.format(self.targetpop - distPop[p]))))
                 self.attrdockwidget.tblPop.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 if self.usepopfield2 == 1:
-                    self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str(distPop2[p])))
-                    self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str(self.targetpop2 - distPop2[p])))
+                    self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str('{:,}'.format(distPop2[p]))))
+                    self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str('{:,}'.format(self.targetpop2 - distPop2[p]))))
                     self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[p]) / float(self.targetpop2)) * 100)-100,2))+'%'))
                 self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,1).setBackground(QColor(255,255,255))
@@ -1684,6 +1696,7 @@ class StattoRedistrict(object):
 #                        headerWriter.append(d.name)
                 csvWriter.writerow(headerWriter)
                 for key, value in sorted(crosstabPop.items()):
+                    try:
                         keySplit = key.split('|')
                         rowWriter = [keySplit[0],keySplit[1]]
                         rowWriter.append(str(value))
@@ -1719,7 +1732,9 @@ class StattoRedistrict(object):
                                         else:
                                                 rowWriter.append('0.00%')
                         """
-                        csvWriter.writerow(rowWriter)
+                    except:
+                        rowWriter[keySplit[0],keySplit[1],"error processing key"]
+                    csvWriter.writerow(rowWriter)
 #and release the memory
             del crosstabPop
             del crosstabTotalPop
@@ -1870,7 +1885,7 @@ class StattoRedistrict(object):
 
         QgsMessageLog.logMessage("Building spatial index...")
         # Build a spatial index
-
+        # this is inefficient - should probably build this once when the layer is initialised
         feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
         floodFillIndex = QgsSpatialIndex()
         for f in list(feature_dict.values()):
@@ -2002,6 +2017,9 @@ class StattoRedistrict(object):
         self.dockwidget.btnFloodFill.setEnabled(True)
         self.dockwidget.btnPreview.setEnabled(True)
         self.dockwidget.btnUpdate.setEnabled(True)
+        
+    def closeParameters(self):
+        self.dlgparameters.hide()
         
     def createNewDistrictField(self):
         layers = [tree_layer.layer() for tree_layer in QgsProject.instance().layerTreeRoot().findLayers()]
