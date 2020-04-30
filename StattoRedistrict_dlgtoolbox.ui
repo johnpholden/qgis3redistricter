@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>430</width>
-    <height>346</height>
+    <height>393</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>300</y>
+     <y>350</y>
      <width>341</width>
      <height>30</height>
     </rect>
@@ -46,7 +46,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>60</y>
+     <y>100</y>
      <width>391</width>
      <height>30</height>
     </rect>
@@ -59,7 +59,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>100</y>
+     <y>140</y>
      <width>390</width>
      <height>30</height>
     </rect>
@@ -72,7 +72,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>140</y>
+     <y>180</y>
      <width>390</width>
      <height>30</height>
     </rect>
@@ -85,7 +85,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>180</y>
+     <y>220</y>
      <width>390</width>
      <height>30</height>
     </rect>
@@ -98,7 +98,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>220</y>
+     <y>260</y>
      <width>391</width>
      <height>80</height>
     </rect>
@@ -113,7 +113,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>40</y>
+      <y>50</y>
       <width>391</width>
       <height>30</height>
      </rect>
@@ -126,7 +126,7 @@
     <property name="geometry">
      <rect>
       <x>160</x>
-      <y>0</y>
+      <y>10</y>
       <width>231</width>
       <height>27</height>
      </rect>
@@ -136,7 +136,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>-4</y>
+      <y>6</y>
       <width>151</width>
       <height>31</height>
      </rect>
@@ -145,6 +145,19 @@
      <string>Column to Cross-tab:</string>
     </property>
    </widget>
+  </widget>
+  <widget class="QPushButton" name="btnLabelLayer">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>60</y>
+     <width>391</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Create/Update Label Layer</string>
+   </property>
   </widget>
  </widget>
  <resources/>

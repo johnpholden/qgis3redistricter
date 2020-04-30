@@ -28,7 +28,7 @@ from builtins import object
 from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo, QVariant
 from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox
 from qgis.PyQt.QtGui import QIcon, QColor
-from qgis.core import QgsProject, QgsMessageLog, QgsSymbol, QgsVectorLayer, QgsCategorizedSymbolRenderer, QgsSimpleFillSymbolLayer, QgsRendererCategory, QgsSpatialIndex, QgsField, QgsExpression, QgsFeatureRequest
+from qgis.core import QgsProject, QgsMessageLog, QgsSymbol, QgsVectorLayer, QgsCategorizedSymbolRenderer, QgsSimpleFillSymbolLayer, QgsRendererCategory, QgsSpatialIndex, QgsField, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry, QgsPointXY, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsTextFormat, QgsTextBufferSettings
 from qgis.gui import QgsMapCanvas, QgsMapToolEmitPoint, QgsMapTool, QgsMapToolIdentifyFeature
 from random import randrange
 from . import resources
@@ -48,7 +48,6 @@ import gc
 
 #for thousands separators
 locale.setlocale(locale.LC_ALL, '')
-print(locale.localeconv())
 
 #define our list containers
 dataFieldList = []				#the list of fields used by the currently active project
@@ -62,7 +61,6 @@ distPop = {}					#the population of the district ID
 distPop2 = {}					#the population of the district ID, field number two
 planManagerList = []			#list of plans for the plan manager
 activePlanName = ''				#the name of the currently active loaded plan
-floodFillIndex = None
 
 #define our DataField class
 #this is used to hold the user defined columns in the plan
@@ -95,7 +93,7 @@ class DataField(object):
         def assignDataFields(plan_name):
             global dataFieldList
             dataFieldList = []
-            print('assigning Data Fields')
+            print('assigning Data Fields' + str(plan_name))
             for d in dataFieldMasterList:
                 print(d.plan + '|' + d.name)
                 if d.plan == plan_name:
@@ -205,6 +203,7 @@ class StattoRedistrict(object):
         self.planName = ''
         self.oldPlanName = ''                   #if you start to load a new plan, but then you cancel
         self.flagNewPlan = 0
+        self.spatialIndex = None
         self.activePlan = None
         self.undoAttr = {}
 
@@ -274,7 +273,7 @@ class StattoRedistrict(object):
         :rtype: QAction
         """
 
-        icon = QIcon("icon.png")
+        icon = QIcon(":/plugins/qgis3redistricter-master/icon.png")
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
@@ -380,6 +379,7 @@ class StattoRedistrict(object):
             self.planName = ''                       #the name of the active plan
             self.flagNewPlan = 0                    #determines what should happen with saving/loading 
             self.activePlan = None                  #the active plan
+            self.labelLayer = None
             self.undoAttr = {}
 
 
@@ -442,6 +442,7 @@ class StattoRedistrict(object):
 
 #toolbox event triggers
             self.dlgtoolbox.btnExportToCsv.clicked.connect(self.exportToCsv)
+            self.dlgtoolbox.btnLabelLayer.clicked.connect(self.createLabelLayer)
             self.dlgtoolbox.btnRename.clicked.connect(self.renameElectorates)
             self.dlgtoolbox.btnSelectUnassigned.clicked.connect(self.selectUnassigned)
             self.dlgtoolbox.btnRefreshAttributeTable.clicked.connect(self.refreshTable)
@@ -605,7 +606,7 @@ class StattoRedistrict(object):
 #                self.dlgpreview.tblPreview.setItem(counter,3,QTableWidgetItem(str('{:,}'.format(previewDistricts[p] - distPop[0]))))
             try:
                 if self.targetpop > 0:
-                    self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
+                    self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem(str(round((float(float(previewDistricts[p]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 else:
                     self.dlgpreview.tblPreview.setItem(counter,4,QTableWidgetItem('0.00%'))
             except:
@@ -663,7 +664,7 @@ class StattoRedistrict(object):
                         errors = 1
 #                        QgsMessageLog.logMessage(self.distfield + " failed on load")
 
-        if self.usepopfield2 == 1:
+        if self.popfield2:
             try:
                     distPop2[int(districtId[str(feature[self.distfield])])] = distPop2[int(districtId[str(feature[self.distfield])])] - feature[self.popfield2] # feature[self.popfield]
     #                QgsMessageLog.logMessage("from: " + str(districtId[str(feature[self.distfield])]))
@@ -698,17 +699,17 @@ class StattoRedistrict(object):
                         errors = 1
                         QgsMessageLog.logMessage(self.distfield + " failed on load")
                         
-        if self.usepopfield2 == 1:
+        if self.popfield2 == 1:
             try:
-                distPop2[newId] = distPop2[newId] + feature[self.popfield]
+                distPop2[newId] = distPop2[newId] + feature[self.popfield2]
 #                QgsMessageLog.logMessage("to: " + str(newId))
             except:
                 try:
-                        distPop2[0] = distPop2[0] + feature[self.popfield]
+                        distPop2[0] = distPop2[0] + feature[self.popfield2]
 #                        QgsMessageLog.logMessage("to: zer0")
                 except:
                         errors = 1
-                        QgsMessageLog.logMessage(self.distfield + " failed on load")
+#                        QgsMessageLog.logMessage(self.distfield + " failed on load")
                         
                         
                         
@@ -1066,7 +1067,8 @@ class StattoRedistrict(object):
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText('None')))
         else:
             self.dlgparameters.cmbPopField_2.setCurrentIndex((self.dlgparameters.cmbPopField_2.findText(self.popfield2)))
-            self.dlgparameters.chkIgnoreSecond.setChecked(False)
+            if self.usepopfield2 == 1:
+                self.dlgparameters.chkIgnoreSecond.setChecked(False)
         self.dlgparameters.cmbDistField.setCurrentIndex((self.dlgparameters.cmbDistField.findText(self.distfield)))
         self.dlgparameters.inpTolerance.setValue(self.targetpoppct)
         self.dlgparameters.inpTolerance_2.setValue(self.targetpop2pct)
@@ -1147,16 +1149,16 @@ class StattoRedistrict(object):
         self.targetpop = 0
         for feature in self.activeLayer.getFeatures():
                 self.totalpop = self.totalpop + int(feature[self.popfield])
-                if self.usepopfield2 == 1 and (self.popfield2 != None or self.popfield2 != 'None'):
+                if self.popfield2:
                     self.totalpop2 = self.totalpop2 + int(feature[self.popfield2])
-        self.targetpop = int(self.totalpop / self.districts)
+        self.targetpop = int(round(self.totalpop / self.districts))
         self.targetpoppct = self.dlgparameters.inpTolerance.value()
         self.targetpoppct2 = self.dlgparameters.inpTolerance_2.value()
         targetpoprem = int((self.targetpop / 100) * self.targetpoppct)
         self.targetpoplower = int(self.targetpop - targetpoprem)
         self.targetpophigher = int(self.targetpop + targetpoprem + 1)
         if self.usepopfield2 == 1:
-            self.targetpop2 = int(self.totalpop2 / self.districts)
+            self.targetpop2 = int(round(self.totalpop2 / self.districts))
             targetpoprem2 = int((self.targetpop2 / 100) * self.targetpoppct2)
             self.targetpop2lower = int(self.targetpop2 - targetpoprem2)
             self.targetpop2higher = int(self.targetpop2 + targetpoprem2 + 1)
@@ -1175,9 +1177,11 @@ class StattoRedistrict(object):
             #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
             if self.activePlan:
                 if d.plan == self.activePlan.name:
+                    print("dataField found!")
                     numDataFields = numDataFields + 1
                     self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
             if d.plan == 'qgisRedistricterPendingField':
+                print("pending dataField found!")
                 numDataFields = numDataFields + 1
                 self.attrdockwidget.tblPop.setHorizontalHeaderItem(4+numDataFields,QTableWidgetItem(d.name))
 
@@ -1354,7 +1358,7 @@ class StattoRedistrict(object):
                     except:
                             errors = 1
 #                        QgsMessageLog.logMessage(self.distfield + " failed on load")
-            if self.usepopfield2 == 1:
+            if self.popfield2:
                 try:
                         distPop2[int(districtId[str(feature[self.distfield])])] = distPop2[int(districtId[str(feature[self.distfield])])] + feature[self.popfield2]
                 except:
@@ -1449,7 +1453,6 @@ class StattoRedistrict(object):
                                         self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(round(float(float(d.field_sum[p]) / float(distPop2[p])) * 100,2))+'%'))
                                 else:
                                         self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem('0.00%'))
-
 
         self.attrdockwidget.tblPop.resizeColumnToContents(0)
         self.attrdockwidget.tblPop.resizeColumnToContents(1)
@@ -1883,13 +1886,14 @@ class StattoRedistrict(object):
         select_list = []
         select_list.append(feature)
 
-        QgsMessageLog.logMessage("Building spatial index...")
-        # Build a spatial index
-        # this is inefficient - should probably build this once when the layer is initialised
-        feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
-        floodFillIndex = QgsSpatialIndex()
-        for f in list(feature_dict.values()):
-            floodFillIndex.insertFeature(f)
+        if self.spatialIndex == None:
+            QgsMessageLog.logMessage("Building spatial index...")
+            # Build a spatial index
+            # this is inefficient - should probably build this once when the layer is initialised
+            feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
+            self.spatialIndex = QgsSpatialIndex()
+            for f in list(feature_dict.values()):
+                self.spatialIndex.insertFeature(f)
 
         QgsMessageLog.logMessage("Finding neighbors...")
         counter = 0
@@ -1903,7 +1907,7 @@ class StattoRedistrict(object):
             # We use spatial index to find the features intersecting the bounding box
             # of the current feature. This will narrow down the features that we need
             # to check neighboring features.
-            intersecting_ids = floodFillIndex.intersects(geom.boundingBox())
+            intersecting_ids = self.spatialIndex.intersects(geom.boundingBox())
             for intersecting_id in intersecting_ids:
                     # Look up the feature from the dictionary
                     intersecting_f = feature_dict[intersecting_id]
@@ -1988,12 +1992,83 @@ class StattoRedistrict(object):
         self.dlgpreview.closingPlugin.disconnect(self.onClosePlugin)
         self.pluginIsActive = False
         
+    def createLabelLayer(self):
+        self.dlgtoolbox.hide()
+        self.iface.statusBarIface().showMessage( u"Creating/updating label layer... please wait" )
+        QCoreApplication.processEvents()
+        
+        if self.labelLayer:
+            QgsProject.instance().removeMapLayers([self.labelLayer.id()])
+            self.labelLayer = None
+
+        QCoreApplication.processEvents()
+
+
+        x = {}
+        y = {}
+        counter = {}
+        for feature in self.activeLayer.getFeatures():
+            if feature[self.distfield]:
+                if str(feature[self.distfield]) != '0':
+                    pt = feature.geometry().centroid().asPoint()
+                    if feature[self.distfield] in counter:
+                        x[feature[self.distfield]] = x[feature[self.distfield]] + pt.x()
+                        y[feature[self.distfield]] = y[feature[self.distfield]] + pt.y()
+                        counter[feature[self.distfield]] = counter[feature[self.distfield]] + 1
+                    else:
+                        x[feature[self.distfield]] = pt.x()
+                        y[feature[self.distfield]] = pt.y()
+                        counter[feature[self.distfield]] = 1
+        self.iface.statusBarIface().showMessage( u"...done with feature analysis (step 1/3)" )
+        QCoreApplication.processEvents()
+
+        
+        self.labelLayer = QgsVectorLayer("Point", "tempDistrictLabels", "memory")
+        pr = self.labelLayer.dataProvider()
+        pr.addAttributes([QgsField("district", QVariant.String)])
+        self.labelLayer.updateFields()
+        
+        self.iface.statusBarIface().showMessage( u"...done initialising point layer (step 2/3)" )
+        QCoreApplication.processEvents()
+
+        
+        for value, key in counter.items():
+            if value > 0:
+                try:
+                    f = QgsFeature()
+                    f.setGeometry(QgsGeometry.fromPointXY(QgsPointXY((x[value] / key), (y[value] / key))))
+                    f.setAttributes([str(value)])
+                    pr.addFeature(f)
+                except:
+                    QgsMessageLog.logMessage("could not create point for key pair " + str(key) + "|" + str(value))
+
+        lbl = QgsPalLayerSettings()
+        lbl.fieldName = 'district'
+        lbl.enabled = True
+        
+        text_format = QgsTextFormat()
+        text_format.setSize(16)
+        text_buffer = QgsTextBufferSettings()
+        text_buffer.setEnabled(True)
+        text_buffer.setSize(2.0)
+        text_format.setBuffer(text_buffer)
+        lbl.setFormat(text_format)
+        
+        
+        self.labelLayer.setLabeling(QgsVectorLayerSimpleLabeling(lbl))
+        self.labelLayer.setLabelsEnabled(True)
+
+        QgsProject.instance().addMapLayer(self.labelLayer)
+        self.iface.statusBarIface().showMessage( u"...done." )
+        QCoreApplication.processEvents()
+
+        
     def cementDataFields(self):
         """
         this function converts any custom fields the user has just created
         to being fields on the active redistricting plan
         """
-        print("cementing Data Fields")
+#        print("cementing Data Fields")
         for d in dataFieldMasterList:
             print(d.plan)
             if d.plan == 'qgisRedistricterPendingField':
