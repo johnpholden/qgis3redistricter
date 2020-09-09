@@ -877,9 +877,6 @@ class StattoRedistrict(object):
 
     def updateGeographyColumn(self):
         self.geofield = self.dockwidget.cmbGeoField.currentText()
-#        if self.activeLayer:
-#            self.saveParametersToFile()
-
 
     def saveParametersToFile(self,fileName=None):
 
@@ -1004,10 +1001,11 @@ class StattoRedistrict(object):
                 if lineList[0] == "distfield":
                     self.distfield = (lineList[1])
                 if lineList[0] == "geofield":
-                    self.geofield = (lineList[1])
+                    if lineList[1]:
+                        self.geofield = (lineList[1])
                 if lineList[0] == "datafield":
                     newfield = (lineList[1])
-                    newfieldtype = (lineList[2])
+                    newfieldtype = int(lineList[2])
                     df = DataField([newfield, newfieldtype, self.planName])
                 if lineList[0] == "districtnames":
                     counter = 0
@@ -1690,6 +1688,7 @@ class StattoRedistrict(object):
  #       self.dlgparameters.cmbDispField2.addItems(field_names)
         selectedLayerIndex = self.dlgparameters.cmbActiveLayer.currentIndex()
         selectedLayer = layers[selectedLayerIndex]
+        self.dockwidget.cmbGeoField.setCurrentIndex((self.dockwidget.cmbGeoField.findText(self.geofield)))
 
 #        loadFile = selectedLayer.source() + '.qgis.red'
 #        QgsMessageLog.logMessage('loadfile: ' + loadFile)
