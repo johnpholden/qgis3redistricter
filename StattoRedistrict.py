@@ -948,7 +948,7 @@ class StattoRedistrict(object):
         writeStr = 'locked\t'
         for l in locked:
             if locked[l] == 1:
-                writeStr = writeStr + string(l)
+                writeStr = writeStr + str(l)
         f.write(writeStr + '\n')
         f.write('End Plan\n')
         f.close()
