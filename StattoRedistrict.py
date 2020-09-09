@@ -26,8 +26,9 @@ from builtins import str
 from builtins import range
 from builtins import object
 from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo, QVariant
-from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox, QShortcut
 from qgis.PyQt.QtGui import QIcon, QColor
+from PyQt5.QtGui import QKeySequence
 from qgis.core import QgsProject, QgsMessageLog, QgsSymbol, QgsVectorLayer, QgsCategorizedSymbolRenderer, QgsSimpleFillSymbolLayer, QgsRendererCategory, QgsSpatialIndex, QgsField, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry, QgsPointXY, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsTextFormat, QgsTextBufferSettings
 from qgis.gui import QgsMapCanvas, QgsMapToolEmitPoint, QgsMapTool, QgsMapToolIdentifyFeature
 from random import randrange
@@ -415,6 +416,8 @@ class StattoRedistrict(object):
             #provide other gui options
             self.dockwidget.btnParameters.clicked.connect(self.openPlanManager)
             self.dockwidget.btnUpdate.clicked.connect(self.updateAttributes)
+            self.dockwidget.btnUpdate.shortcut = QShortcut(QKeySequence("`"), self.dockwidget.btnUpdate)
+            self.dockwidget.btnUpdate.shortcut.activated.connect(self.updateAttributes)
             self.dockwidget.btnEraser.clicked.connect(self.setEraser)
             self.dockwidget.btnSelect.clicked.connect(self.updateSelectedElectorate)
             self.dockwidget.btnToolbox.clicked.connect(self.openToolbox)
@@ -423,6 +426,9 @@ class StattoRedistrict(object):
             self.dockwidget.btnActiveDistrictPlus.clicked.connect(self.updateIncreaseDistrictIncrement)
             self.dockwidget.btnUndo.clicked.connect(self.undoLast)
             self.dockwidget.btnPreview.clicked.connect(self.previewSelection)
+            self.dockwidget.btnUpdate.shortcut = QShortcut(QKeySequence("1"), self.dockwidget.btnPreview)
+            self.dockwidget.btnUpdate.shortcut.activated.connect(self.previewSelection)
+            
             self.dockwidget.btnFindDistrict.clicked.connect(self.selectByActiveDistrict)
             self.dockwidget.btnGeoSelect.clicked.connect(self.selectByGeography)
             self.dockwidget.cmbGeoField.currentIndexChanged.connect(self.updateGeographyColumn)
@@ -464,6 +470,11 @@ class StattoRedistrict(object):
             self.attrdockwidget.show()
 
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlgpreview)
+
+
+    def restoreWidgets():
+        self.attrdockwidget.show()
+        self.attrdockwidget.show()
 
 
     def canvasReleaseEvent(self, event):
@@ -1986,8 +1997,8 @@ class StattoRedistrict(object):
                         districtName[counter] = str(counter)
                         districtId[str(counter)] = counter
                         counter = counter + 1
-#        QgsMessageLog.logMessage(format(districtName))
-#        QgsMessageLog.logMessage(format(districtId))
+        QgsMessageLog.logMessage(format(districtName))
+        QgsMessageLog.logMessage(format(districtId))
         self.updateActivePlan()
         self.saveParametersToFile(self.saveFileName)
         self.updateFieldValues()
@@ -2116,10 +2127,11 @@ class StattoRedistrict(object):
         self.activeLayer.select(ids)
 
     def onClosePlugin(self):
+        self.dlgparameters.hide() #closingPlugin.disconnect() #self.onClosePlugin)
+        self.dlgpreview.hide() #closingPlugin.disconnect() #self.onClosePlugin)
+        self.dockwidget.hide() #closingPlugin.disconnect() #self.onClosePlugin)
+        self.attrdockwidget.hide() #closingPlugin.disconnect() #self.onClosePlugin)
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-        self.attrdockwidget.closingPlugin.disconnect(self.onClosePlugin)
-        self.dlgparameters.closingPlugin.disconnect(self.onClosePlugin)
-        self.dlgpreview.closingPlugin.disconnect(self.onClosePlugin)
         self.pluginIsActive = False
         
     def createLabelLayer(self):
