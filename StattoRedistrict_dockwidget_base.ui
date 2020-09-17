@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>414</width>
+    <width>425</width>
     <height>437</height>
    </rect>
   </property>
@@ -30,6 +30,16 @@
        <widget class="QPushButton" name="btnParameters">
         <property name="text">
          <string>Plan Manager</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnCurrentPlan">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Edit Current Plan</string>
         </property>
        </widget>
       </item>
@@ -196,9 +206,16 @@ No active number of districts to create!
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Geo Select:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QRadioButton" name="radGeoSelectAll">
           <property name="text">
-           <string>All Features</string>
+           <string>All</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -224,51 +241,73 @@ No active number of districts to create!
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <widget class="QToolButton" name="btnPreview">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Preview Selection</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QToolButton" name="btnPreview">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Preview Selection</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="btnUndo">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Undo Last Update</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="btnFloodFill">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Flood Select</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QToolButton" name="btnUndo">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Undo Last Update</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QCheckBox" name="chkVisible">
+          <property name="text">
+           <string>Display visible districts only</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRefreshAttributes">
+          <property name="text">
+           <string>Refresh Attribute Table</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QToolButton" name="btnFloodFill">
-        <property name="enabled">
-         <bool>false</bool>
+       <widget class="QLabel" name="lblPreview">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="text">
-         <string>Flood Select</string>
+         <string/>
         </property>
        </widget>
       </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QLabel" name="lblPreview">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
     </item>
    </layout>
   </widget>
