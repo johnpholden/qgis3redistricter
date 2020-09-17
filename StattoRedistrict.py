@@ -1815,6 +1815,9 @@ class StattoRedistrict(object):
         saveFileName, __ = QFileDialog.getSaveFileName(None)
 
         if saveFileName:
+            saveExt = os.path.splitext(saveFileName)
+            if info[1] == '' or info[1] == None:
+                 saveFileName = saveFileName + '.csv'
             self.dlgtoolbox.hide()
             self.iface.statusBarIface().showMessage( u"Creating crosstabs..." )
             QCoreApplication.processEvents()
