@@ -540,6 +540,7 @@ class StattoRedistrict(object):
 #                    QgsMessageLog.logMessage(str(feature.id) + " changed to: " + str(self.activedistrict) + " on " + str(field_id))
             self.activeLayer.endEditCommand()
             self.iface.statusBarIface().showMessage( u"Updating population table" )
+            
             QCoreApplication.processEvents()
             self.updateFieldValues()
             self.iface.statusBarIface().showMessage( u"Committing changes to table" )
@@ -547,6 +548,7 @@ class StattoRedistrict(object):
             self.activeLayer.commitChanges()
         self.activeLayer.removeSelection()
         self.updateTable()
+        self.iface.mapCanvas().refresh()
         self.dockwidget.btnUndo.setEnabled(True)
         self.iface.mainWindow().statusBar().showMessage( u"Updated " + str(counter) + " features." )
         self.dockwidget.btnUpdate.setEnabled(True)
@@ -751,6 +753,19 @@ class StattoRedistrict(object):
                         d.field_sum[0] = d.field_sum[0] + feature[d.name]
                         d.total_sum = d.total_sum + feature[d.name]
 
+    def deletePlan(self):
+        if self.dlgplanmanager.lstRedistrictingPlans.selectedItems():
+            for l in self.dlgplanmanager.lstRedistrictingPlans.selectedIndexes():
+                layerName = l
+        else:
+            return
+
+        if layerName != None:
+            layers = planManagerList[layerName.row()].split('|')
+            os.remove(layers[1])
+        else:
+            return
+        self.loadParametersDialog()
 
     def openPlanManager(self):
         global planManagerList
@@ -890,7 +905,7 @@ class StattoRedistrict(object):
         self.geofield = self.dockwidget.cmbGeoField.currentText()
 
     def saveParametersToFile(self,fileName=None):
-
+        global districtName
 #        global dataPlanList
 
         """
@@ -1024,7 +1039,7 @@ class StattoRedistrict(object):
                         if counter > 0:
                             districtName[counter-1] = str(i)
                             if i not in districtId:
-                                    districtId[i] = str(counter-1)
+                                    districtId[i] = districtName[counter - 1]
                         counter = counter + 1
                 if lineList[0] == "locked":
                     for i in lineList:
@@ -1965,7 +1980,7 @@ class StattoRedistrict(object):
         districtId["NULL"] = -1
         for j in range(counter, self.districts+1):
                 districtName[counter] = str(counter)
-                districtId[str(counter)] = counter
+                districtId[str(counter)] = districtName[counter]
                 counter = counter + 1
         QgsMessageLog.logMessage(format(districtName))
         QgsMessageLog.logMessage(format(districtId))
