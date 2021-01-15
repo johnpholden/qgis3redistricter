@@ -1529,7 +1529,10 @@ class StattoRedistrict(object):
                 if self.usepopfield2 == 1:
                     self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str('{:,}'.format(distPop2[q]))))
                     self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str('{:,}'.format(self.targetpop2 - distPop2[q]))))
-                    self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[q]) / float(self.targetpop2)) * 100)-100,2))+'%'))
+                    if self.targetpop2 > 0:
+                        self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[q]) / float(self.targetpop2)) * 100)-100,2))+'%'))
+                    else:
+                        self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem('N/A'))
                 self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,1).setBackground(QColor(255,255,255))
                 self.attrdockwidget.tblPop.item(p,2).setBackground(QColor(255,255,255))
