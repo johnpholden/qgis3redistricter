@@ -556,6 +556,7 @@ class StattoRedistrict(object):
         gc.collect()
 
     def previewSelection(self):
+        global locked
         global distPop
         prevpop = 0
         prevpoplock = 0
@@ -585,7 +586,7 @@ class StattoRedistrict(object):
                 featId = str(feature[self.distfield])
                 if featId == 'NULL':
                     featId = '0'
-                if locked[str(districtId[featId])] == 0:
+                if locked[featId] == 0:
                     newprevpop = newprevpop + feature[self.popfield]
 
                     if str(feature[self.distfield]) in previewDistricts.keys():
@@ -900,6 +901,7 @@ class StattoRedistrict(object):
                 locked[districtName[r]] = 0
                 if self.attrdockwidget.tblPop.item(r,1).checkState() == Qt.Checked:
                         locked[districtName[q]] = 1
+        QgsMessageLog.logMessage("...locked. " + str(locked))
         self.updateDistrict()
 
     def updateGeographyColumn(self):
@@ -1040,7 +1042,7 @@ class StattoRedistrict(object):
                         if counter > 0:
                             districtName[counter-1] = str(i)
                             if i not in districtId:
-                                    districtId[i] = districtName[counter - 1]
+                                    districtId[i] = int(counter - 1)
                         counter = counter + 1
                 if lineList[0] == "locked":
                     for i in lineList:
@@ -2011,8 +2013,8 @@ class StattoRedistrict(object):
         districtId["0"] = 0
         for i in electorateNames:
                 if counter <= self.districts:
-                        districtName[counter] = str(i)
-                        districtId[str(i)] = counter
+                        districtName[counter] = str(i.strip())
+                        districtId[str(i.strip())] = counter
                         counter = counter + 1
 #                        QgsMessageLog.logMessage(i)
         if counter > self.districts:
@@ -2020,8 +2022,8 @@ class StattoRedistrict(object):
                         districtName[counter] = str(counter)
                         districtId[str(counter)] = counter
                         counter = counter + 1
-#        QgsMessageLog.logMessage(format(districtName))
-#        QgsMessageLog.logMessage(format(districtId))
+        QgsMessageLog.logMessage('dn' + str(districtName))
+        QgsMessageLog.logMessage('di' + str(districtId))
         self.updateActivePlan()
         self.saveParametersToFile(self.saveFileName)
         self.updateFieldValues()
