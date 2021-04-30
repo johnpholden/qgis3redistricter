@@ -489,11 +489,12 @@ class StattoRedistrict(object):
         layer = self.activeLayer
         rect = self.canvas.extent()
         request = QgsFeatureRequest().setFilterRect(rect)
-        selected_feats = layer.getFeatures(request)
-        idx = layer.fields().indexFromName(self.distfield)
-        attr = [ str(feat.attributes()[idx]) for feat in selected_feats ]
-        self.visibleFeats = list(dict.fromkeys(attr))
-        self.updateTable()
+        if layer:
+            selected_feats = layer.getFeatures(request)
+            idx = layer.fields().indexFromName(self.distfield)
+            attr = [ str(feat.attributes()[idx]) for feat in selected_feats ]
+            self.visibleFeats = list(dict.fromkeys(attr))
+            self.updateTable()
 
     def updateAttributes(self):
         """Updates the attributes of the the data table when the Update Selected Polygons feature is clicked"""
@@ -966,7 +967,7 @@ class StattoRedistrict(object):
                 f.write(writeStr)
         f.write('districtnames\t')
         for r in districtName:
-                f.write(str(r) + '\t')
+                f.write(str(districtName[r]) + '\t')
         f.write('\n')
         writeStr = 'locked\t'
         for l in locked:
@@ -1646,9 +1647,9 @@ class StattoRedistrict(object):
                 if q == 0 or (self.dockwidget.chkVisible.isChecked() == False) or (self.dockwidget.chkVisible.isChecked() == True and districtName[q] in self.visibleFeats):
                     i = counter
                     counter = counter + 1
-                    if str(q) in colour_dict:
+                    if str(districtName[q]) in colour_dict:
                         try:
-                            self.attrdockwidget.tblPop.item(i,0).setBackground(colour_dict[str(q)])
+                            self.attrdockwidget.tblPop.item(i,0).setBackground(colour_dict[str(districtName[q])])
                         except:
                             self.iface.statusBarIface().showMessage( u"Colours could not be updated on attribute table")
 
@@ -1965,6 +1966,7 @@ class StattoRedistrict(object):
 #        try:
         for d, val in list(districtName.items()):
                 if d != '0' and d != 0:
+                    if str(d) != 'NULL':
 #                        QgsMessageLog.logMessage("looping through " + str(val))
                         txtBox = txtBox + str(val) + '\n'
         self.dlgelectorates.txtElectorates.setPlainText(txtBox)
@@ -2012,14 +2014,14 @@ class StattoRedistrict(object):
                         districtName[counter] = str(i)
                         districtId[str(i)] = counter
                         counter = counter + 1
-                        QgsMessageLog.logMessage(i)
+#                        QgsMessageLog.logMessage(i)
         if counter > self.districts:
                 for j in range(counter, self.districts):
                         districtName[counter] = str(counter)
                         districtId[str(counter)] = counter
                         counter = counter + 1
-        QgsMessageLog.logMessage(format(districtName))
-        QgsMessageLog.logMessage(format(districtId))
+#        QgsMessageLog.logMessage(format(districtName))
+#        QgsMessageLog.logMessage(format(districtId))
         self.updateActivePlan()
         self.saveParametersToFile(self.saveFileName)
         self.updateFieldValues()
