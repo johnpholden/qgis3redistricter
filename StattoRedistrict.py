@@ -300,7 +300,7 @@ class StattoRedistrict(object):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ':/plugins/StattoRedistricter/icon.png'
-        self.add_action(
+        self.key_action = self.add_action(
             icon_path,
             text=self.tr(u'Statto Software Redistricter'),
             callback=self.run,
@@ -416,14 +416,23 @@ class StattoRedistrict(object):
             #provide other gui options
             self.dockwidget.btnParameters.clicked.connect(self.openPlanManager)
             self.dockwidget.btnUpdate.clicked.connect(self.updateAttributes)
+
             self.dockwidget.btnUpdate.shortcut = QShortcut(QKeySequence("`"), self.dockwidget.btnUpdate)
             self.dockwidget.btnUpdate.shortcut.activated.connect(self.updateAttributes)
+
             self.dockwidget.btnEraser.clicked.connect(self.setEraser)
             self.dockwidget.btnSelect.clicked.connect(self.updateSelectedElectorate)
             self.dockwidget.btnToolbox.clicked.connect(self.openToolbox)
             self.dockwidget.sliderDistricts.valueChanged.connect(self.updateDistrict)
             self.dockwidget.btnActiveDistrictMinus.clicked.connect(self.updateDecreaseDistrictIncrement)
             self.dockwidget.btnActiveDistrictPlus.clicked.connect(self.updateIncreaseDistrictIncrement)
+
+            self.dockwidget.btnActiveDistrictMinus.shortcut = QShortcut(QKeySequence("1"), self.dockwidget.btnActiveDistrictMinus)
+            self.dockwidget.btnActiveDistrictMinus.shortcut.activated.connect(self.updateDecreaseDistrictIncrement)
+
+            self.dockwidget.btnActiveDistrictPlus.shortcut = QShortcut(QKeySequence("2"), self.dockwidget.btnActiveDistrictPlus)
+            self.dockwidget.btnActiveDistrictPlus.shortcut.activated.connect(self.updateIncreaseDistrictIncrement)
+
             self.dockwidget.btnUndo.clicked.connect(self.undoLast)
             self.dockwidget.btnPreview.clicked.connect(self.previewSelection)
             self.dockwidget.btnUpdate.shortcut = QShortcut(QKeySequence("1"), self.dockwidget.btnPreview)
@@ -522,7 +531,7 @@ class StattoRedistrict(object):
                 #after a certain point, see if it's faster to bifurcate attribute updates
             for feature in self.activeLayer.getFeatures(request):
                     try:
-                            if locked[str(districtId[str(feature[self.distfield])])] == 0:
+                            if locked[str(feature[self.distfield])] == 0:
                                     self.undoAttr[feature.id()] = feature[self.distfield]
                                     self.updateFeatureValue(feature, districtName[self.activedistrict], field_id)
 #                                    self.updateFeatureValuev2(feature, districtName[self.activedistrict], field_id)
@@ -720,7 +729,11 @@ class StattoRedistrict(object):
 
 #        QgsMessageLog.logMessage(str(districtId[str(feature[self.distfield])]))
         self.activeLayer.changeAttributeValue(feature.id(),field_id,change_to)
-        newId = int(districtId[str(change_to)])
+        
+        if str(change_to) != 'NULL':
+            newId = int(districtId[str(change_to)])
+        else:
+            newid = 'NULL'
 
         try:
                 distPop[newId] = distPop[newId] + feature[self.popfield]
@@ -1047,7 +1060,7 @@ class StattoRedistrict(object):
                 if lineList[0] == "locked":
                     for i in lineList:
                         if str(i) != 'locked':
-                            locked[int(i)] = 1
+                            locked[str(i)] = 1
         self.updateFieldTable()
         f.close()
 
