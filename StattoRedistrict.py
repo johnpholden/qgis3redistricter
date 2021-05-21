@@ -427,10 +427,10 @@ class StattoRedistrict(object):
             self.dockwidget.btnActiveDistrictMinus.clicked.connect(self.updateDecreaseDistrictIncrement)
             self.dockwidget.btnActiveDistrictPlus.clicked.connect(self.updateIncreaseDistrictIncrement)
 
-            self.dockwidget.btnActiveDistrictMinus.shortcut = QShortcut(QKeySequence("1"), self.dockwidget.btnActiveDistrictMinus)
+            self.dockwidget.btnActiveDistrictMinus.shortcut = QShortcut(QKeySequence("2"), self.dockwidget.btnActiveDistrictMinus)
             self.dockwidget.btnActiveDistrictMinus.shortcut.activated.connect(self.updateDecreaseDistrictIncrement)
 
-            self.dockwidget.btnActiveDistrictPlus.shortcut = QShortcut(QKeySequence("2"), self.dockwidget.btnActiveDistrictPlus)
+            self.dockwidget.btnActiveDistrictPlus.shortcut = QShortcut(QKeySequence("3"), self.dockwidget.btnActiveDistrictPlus)
             self.dockwidget.btnActiveDistrictPlus.shortcut.activated.connect(self.updateIncreaseDistrictIncrement)
 
             self.dockwidget.btnUndo.clicked.connect(self.undoLast)
@@ -1306,13 +1306,18 @@ class StattoRedistrict(object):
         self.targetpoppct = self.dlgparameters.inpTolerance.value()
         self.targetpoppct2 = self.dlgparameters.inpTolerance_2.value()
         targetpoprem = int((self.targetpop / 100) * self.targetpoppct)
+        #has_remainder will add an additional person to the top end to reflect that not all people may fall equally into precincts
+        #has_remainder = 0 when the modulo is 0, since that extra person isn't needed
+        has_remainder = 1
+        if self.totalpop % self.districts == 0:
+            has_remainder = 0
         self.targetpoplower = int(self.targetpop - targetpoprem)
-        self.targetpophigher = int(self.targetpop + targetpoprem + 1)
+        self.targetpophigher = int(self.targetpop + targetpoprem + has_remainder)
         if self.usepopfield2 == 1:
             self.targetpop2 = int(round(self.totalpop2 / self.districts))
             targetpoprem2 = int((self.targetpop2 / 100) * self.targetpoppct2)
             self.targetpop2lower = int(self.targetpop2 - targetpoprem2)
-            self.targetpop2higher = int(self.targetpop2 + targetpoprem2 + 1)
+            self.targetpop2higher = int(self.targetpop2 + targetpoprem2 + has_remainder)
 
 
         self.iface.statusBarIface().showMessage( u"Variables initialised, updating front-end..." )
@@ -1789,7 +1794,7 @@ class StattoRedistrict(object):
         if saveFileName:
             with open(saveFileName, 'w') as csvFile:
                 csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-                headerWriter = ['District','Population','To Target', 'Dev%']
+                headerWriter = ['id','District','Population','To Target', 'Dev%']
                 for d in dataFieldList:
                         headerWriter.append(d.name)
                 csvWriter.writerow(headerWriter)
@@ -1797,6 +1802,7 @@ class StattoRedistrict(object):
                 for p in range(0,self.districts+1):
                         counter = counter + 1
                         rowWriter = [str(p)]
+                        rowWriter.append(str(districtName[p]))
                         rowWriter.append(str(distPop[p]))
                         rowWriter.append(str(self.targetpop - distPop[p]))
                         rowWriter.append(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%')
@@ -1835,7 +1841,7 @@ class StattoRedistrict(object):
 
         if saveFileName:
             saveExt = os.path.splitext(saveFileName)
-            if info[1] == '' or info[1] == None:
+            if saveExt[1] == '' or saveExt[1] == None:
                  saveFileName = saveFileName + '.csv'
             self.dlgtoolbox.hide()
             self.iface.statusBarIface().showMessage( u"Creating crosstabs..." )
@@ -1863,7 +1869,10 @@ class StattoRedistrict(object):
                     if str(feature[crossTabFieldName]) in crosstabTotalPop.keys():
                         crosstabTotalPop[str(feature[crossTabFieldName])] = crosstabTotalPop[str(feature[crossTabFieldName])] + feature[self.popfield]
                     else:
-                        crosstabTotalPop[str(feature[crossTabFieldName])] = feature[self.popfield]
+                        if feature[self.popfield] == 'NULL':
+                            crosstabTotalPop[str(feature[crossTabFieldName])] = ''
+                        else:
+                            crosstabTotalPop[str(feature[crossTabFieldName])] = feature[self.popfield]
 
 
             self.iface.statusBarIface().showMessage( u"Saving the file..." )
@@ -1913,7 +1922,8 @@ class StattoRedistrict(object):
                                                 rowWriter.append('0.00%')
                         """
                     except:
-                        rowWriter[keySplit[0],keySplit[1],"error processing key"]
+                        rowWriter = [keySplit[0],keySplit[1]]
+                        rowWriter.append("error processing key")
                     csvWriter.writerow(rowWriter)
 #and release the memory
             del crosstabPop

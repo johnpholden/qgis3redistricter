@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Redistricting Parameters</string>
+   <string>QGIS Redistricting Toolbox</string>
   </property>
   <widget class="QDialogButtonBox" name="boxButton">
    <property name="geometry">
