@@ -982,7 +982,8 @@ class StattoRedistrict(object):
                 f.write(writeStr)
         f.write('districtnames\t')
         for r in districtName:
-                f.write(str(districtName[r]) + '\t')
+                if r != 'NULL':
+                    f.write(str(districtName[r]) + '\t')
         f.write('\n')
         writeStr = 'locked\t'
         for l in locked:
