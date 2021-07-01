@@ -2019,7 +2019,6 @@ class StattoRedistrict(object):
                 districtName[counter] = str(counter)
                 districtId[str(counter)] = districtName[counter]
                 counter = counter + 1
-                locked[districtName[counter]] = 0
         QgsMessageLog.logMessage(format(districtName))
         QgsMessageLog.logMessage(format(districtId))
         self.updateActivePlan()
