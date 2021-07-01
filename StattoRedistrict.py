@@ -982,7 +982,7 @@ class StattoRedistrict(object):
                 f.write(writeStr)
         f.write('districtnames\t')
         for r in districtName:
-                if r != 'NULL':
+                if districtName[r] != 'NULL':
                     f.write(str(districtName[r]) + '\t')
         f.write('\n')
         writeStr = 'locked\t'
@@ -1539,7 +1539,10 @@ class StattoRedistrict(object):
                     if locked[districtName[q]] == 1:
                         self.attrdockwidget.tblPop.item(p,1).setCheckState(Qt.Checked)
                 except:
-                    locked[districtName[q]] = 0
+                    try:
+                        locked[districtName[q]] = 0
+                    except:
+                        QgsMessageLog("Could not lock field " + str(districtName[q]))
                 
                 self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem(str(districtName[q])))
                 if q == 0:
@@ -2016,6 +2019,7 @@ class StattoRedistrict(object):
                 districtName[counter] = str(counter)
                 districtId[str(counter)] = districtName[counter]
                 counter = counter + 1
+                locked[districtName[counter]] = 0
         QgsMessageLog.logMessage(format(districtName))
         QgsMessageLog.logMessage(format(districtId))
         self.updateActivePlan()
