@@ -27,7 +27,7 @@ from builtins import range
 from builtins import object
 from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo, QVariant
 from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox, QShortcut
-from qgis.PyQt.QtGui import QIcon, QColor
+from qgis.PyQt.QtGui import QIcon, QColor, QPalette
 from PyQt5.QtGui import QKeySequence
 from qgis.core import QgsProject, QgsMessageLog, QgsSymbol, QgsVectorLayer, QgsCategorizedSymbolRenderer, QgsSimpleFillSymbolLayer, QgsRendererCategory, QgsSpatialIndex, QgsField, QgsExpression, QgsFeature, QgsFeatureRequest, QgsGeometry, QgsPointXY, QgsPalLayerSettings, QgsVectorLayerSimpleLabeling, QgsTextFormat, QgsTextBufferSettings
 from qgis.gui import QgsMapCanvas, QgsMapToolEmitPoint, QgsMapTool, QgsMapToolIdentifyFeature
@@ -382,6 +382,7 @@ class StattoRedistrict(object):
             self.undoAttr = {}
             self.visibleFeats = []
 
+            self.defaultBG = QColor(QPalette().color(QPalette.Normal, QPalette.Window))
 
             #print "** STARTING StattoRedistrict"
 
@@ -1558,15 +1559,15 @@ class StattoRedistrict(object):
                         self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[q]) / float(self.targetpop2)) * 100)-100,2))+'%'))
                     else:
                         self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem('N/A'))
-                self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
-                self.attrdockwidget.tblPop.item(p,1).setBackground(QColor(255,255,255))
-                self.attrdockwidget.tblPop.item(p,2).setBackground(QColor(255,255,255))
-                self.attrdockwidget.tblPop.item(p,3).setBackground(QColor(255,255,255))
-                self.attrdockwidget.tblPop.item(p,4).setBackground(QColor(255,255,255))
+                self.attrdockwidget.tblPop.item(p,0).setBackground(self.defaultBG)
+                self.attrdockwidget.tblPop.item(p,1).setBackground(self.defaultBG)
+                self.attrdockwidget.tblPop.item(p,2).setBackground(self.defaultBG)
+                self.attrdockwidget.tblPop.item(p,3).setBackground(self.defaultBG)
+                self.attrdockwidget.tblPop.item(p,4).setBackground(self.defaultBG)
                 if self.usepopfield2 == 1:
-                    self.attrdockwidget.tblPop.item(p,5).setBackground(QColor(255,255,255))
-                    self.attrdockwidget.tblPop.item(p,6).setBackground(QColor(255,255,255))
-                    self.attrdockwidget.tblPop.item(p,7).setBackground(QColor(255,255,255))
+                    self.attrdockwidget.tblPop.item(p,5).setBackground(self.defaultBG)
+                    self.attrdockwidget.tblPop.item(p,6).setBackground(self.defaultBG)
+                    self.attrdockwidget.tblPop.item(p,7).setBackground(self.defaultBG)
 
                 if distPop[q] >= self.targetpoplower and distPop[q] <= self.targetpophigher:
                     if usepopfieldflag == 0 or (distPop2[q] >= self.targetpop2lower and distPop2[q] <= self.targetpop2higher):
@@ -1584,7 +1585,7 @@ class StattoRedistrict(object):
                 try:
                     attcol = QgsCategorizedSymbolRenderer.categoryIndexForLabel(str(districtName[p]))
                 except:
-                    self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
+                    self.attrdockwidget.tblPop.item(p,0).setBackground(self.defaultBG)
 
 
                 rowNum = 0
@@ -1629,11 +1630,11 @@ class StattoRedistrict(object):
         for p in range(counter,self.districts+1):
            for n in range(0,5+rowNum):
                self.attrdockwidget.tblPop.setItem(p,n,QTableWidgetItem(''))
-           self.attrdockwidget.tblPop.item(p,0).setBackground(QColor(255,255,255))
-           self.attrdockwidget.tblPop.item(p,1).setBackground(QColor(255,255,255))
-           self.attrdockwidget.tblPop.item(p,2).setBackground(QColor(255,255,255))
-           self.attrdockwidget.tblPop.item(p,3).setBackground(QColor(255,255,255))
-           self.attrdockwidget.tblPop.item(p,4).setBackground(QColor(255,255,255))
+           self.attrdockwidget.tblPop.item(p,0).setBackground(self.defaultBG)
+           self.attrdockwidget.tblPop.item(p,1).setBackground(self.defaultBG)
+           self.attrdockwidget.tblPop.item(p,2).setBackground(self.defaultBG)
+           self.attrdockwidget.tblPop.item(p,3).setBackground(self.defaultBG)
+           self.attrdockwidget.tblPop.item(p,4).setBackground(self.defaultBG)
                
 
         self.attrdockwidget.tblPop.resizeColumnToContents(0)
