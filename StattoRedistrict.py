@@ -1221,7 +1221,7 @@ class StattoRedistrict(object):
             if self.usepopfield2 == 1:
                 self.dlgparameters.chkIgnoreSecond.setChecked(False)
         self.dlgparameters.cmbDistField.setCurrentIndex((self.dlgparameters.cmbDistField.findText(self.distfield)))
-        print(self.targetpoppct)
+#        print(self.targetpoppct)
         self.dlgparameters.inpTolerance.setValue(self.targetpoppct)
         self.dlgparameters.inpTolerance_2.setValue(self.targetpop2pct)
         self.dlgparameters.inpPlanName.setText(self.planName)
@@ -1343,11 +1343,11 @@ class StattoRedistrict(object):
                 chkBoxItem.setCheckState(Qt.Unchecked)
                 self.attrdockwidget.tblPop.setItem(r,1,chkBoxItem)
                 self.attrdockwidget.tblPop.setVerticalHeaderItem(r, QTableWidgetItem(str(r)))
-        self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%'])
+        self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','Deviation','Dev%'])
         numDataFields = 0
         if self.usepopfield2 == 1:
             numDataFields = numDataFields + 3
-            self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','To Target','Dev%','Pop 2','To Target','Dev%'])
+            self.attrdockwidget.tblPop.setHorizontalHeaderLabels(['#','Lock','Population','Deviation','Dev%','Pop 2','Deviation','Dev%'])
         for d in dataFieldList:
             #if the activeplan isn't set, the following nested code avoids an error: this used to be an or boolean but it didn't quite work
             #and try/except wouldn't be more functional since the qgisRedistricterPendingField could be true even if no error is raised
@@ -1550,11 +1550,11 @@ class StattoRedistrict(object):
                     self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem('Unassigned'))
                 self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str('{:,}'.format(distPop[q]))))
 #                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str(distPop[p])))
-                self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:,}'.format(self.targetpop - distPop[q]))))
+                self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:+,}'.format(distPop[q] - self.targetpop))))
                 self.attrdockwidget.tblPop.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[q]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 if self.usepopfield2 == 1:
-                    self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str('{:,}'.format(distPop2[q]))))
-                    self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str('{:,}'.format(self.targetpop2 - distPop2[q]))))
+                    self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str('{:+,}'.format(distPop2[q]))))
+                    self.attrdockwidget.tblPop.setItem(p,6,QTableWidgetItem(str('{:+,}'.format(distPop2[q] - self.targetpop2))))
                     if self.targetpop2 > 0:
                         self.attrdockwidget.tblPop.setItem(p,7,QTableWidgetItem(str(round((float(float(distPop2[q]) / float(self.targetpop2)) * 100)-100,2))+'%'))
                     else:
@@ -1789,16 +1789,16 @@ class StattoRedistrict(object):
     def setEraser(self):
         if self.activedistrict == 0:
                 self.activedistrict = self.dockwidget.sliderDistricts.value()
-                self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
+                self.dockwidget.lblActiveDistrict.setText("Active District: " + str(districtName[self.activedistrict]))
         else:
                 self.activedistrict = 0
                 self.dockwidget.lblActiveDistrict.setText("Eraser Active")
 
     def exportToCsv(self):
-        saveFileName, __ = QFileDialog.getSaveFileName(None)
+        saveFileName, __ = QFileDialog.getSaveFileName(None, "Save File", "export.csv", "Comma Separated Values (*.csv)")
         if saveFileName:
             with open(saveFileName, 'w') as csvFile:
-                csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                csvWriter = csv.writer(csvFile, delimiter=',', newline='')
                 headerWriter = ['id','District','Population','To Target', 'Dev%']
                 for d in dataFieldList:
                         headerWriter.append(d.name)
@@ -1808,8 +1808,8 @@ class StattoRedistrict(object):
                         counter = counter + 1
                         rowWriter = [str(p)]
                         rowWriter.append(str(districtName[p]))
-                        rowWriter.append(str(distPop[p]))
-                        rowWriter.append(str(self.targetpop - distPop[p]))
+                        rowWriter.append(str("{:,}".format(distPop[p])))
+                        rowWriter.append(str("{:+,}".format(distPop[p] - self.targetpop)))
                         rowWriter.append(str(round((float(float(distPop[p]) / float(self.targetpop)) * 100)-100,2))+'%')
                         for d in dataFieldList:
                                 if d.type == 1:
@@ -1842,7 +1842,7 @@ class StattoRedistrict(object):
                                 
     def exportCrosstabToCsv(self):
         crossTabFieldName = self.dlgtoolbox.cmbCrossTab.currentText()
-        saveFileName, __ = QFileDialog.getSaveFileName(None)
+        saveFileName, __ = QFileDialog.getSaveFileName(None, "Save File", "crosstab.csv", "Comma Separated Values (*.csv)")
 
         if saveFileName:
             saveExt = os.path.splitext(saveFileName)
@@ -1884,7 +1884,7 @@ class StattoRedistrict(object):
             QCoreApplication.processEvents()
 # and then save the file
             with open(saveFileName, 'w') as csvFile:
-                csvWriter = csv.writer(csvFile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                csvWriter = csv.writer(csvFile, delimiter=',', newline='')
                 headerWriter = [str(crossTabFieldName), 'District','Population','% of ' + str(crossTabFieldName), '% of District']
 #                for d in dataFieldList:
 #                        headerWriter.append(d.name)
@@ -2129,7 +2129,7 @@ class StattoRedistrict(object):
         #QgsMessageLog.logMessage(str(feature.id()) + " updating district to " + str(feature[self.distfield]))
         self.activedistrict = feature[self.distfield]
         try:
-            self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
+            self.dockwidget.lblActiveDistrict.setText("Active District: " + str(districtName[self.activedistrict]))
             self.dockwidget.sliderDistricts.setValue(int(districtId[str(self.activedistrict)]))
         except:
             self.dockwidget.lblActiveDistrict.setText("Active District: 0")
@@ -2141,9 +2141,9 @@ class StattoRedistrict(object):
         field_id = self.activeLayer.fields().indexFromName(self.geofield)
         strExpr = "\"" + self.geofield + "\" = '" + str(feature[field_id]) + "'"
         if self.dockwidget.radGeoSelectActive.isChecked() == True:
-            strExpr = strExpr + " AND \"" + self.distfield + "\"='" + str(self.activedistrict) + "'"
+            strExpr = strExpr + " AND \"" + self.distfield + "\" = '" + str(districtName[self.activedistrict]) + "'"
         elif self.dockwidget.radGeoSelectUnassigned.isChecked() == True:
-            strExpr = strExpr + " AND \"" + self.distfield + "\"='0'"
+            strExpr = strExpr + " AND (\"" + self.distfield + "\" = '0' OR \"" + self.distfield + "\" IS NULL)"
 
         expr = QgsExpression(strExpr)
         iterator = self.activeLayer.getFeatures(QgsFeatureRequest(expr))
@@ -2157,24 +2157,26 @@ class StattoRedistrict(object):
 #                     QgsMessageLog.logMessage("error when selecting geography")
 
     def toolbtnSelectDeselect(self):
-        self.dockwidget.lblActiveDistrict.setText("Active District: " + str(self.activedistrict))
+        self.dockwidget.lblActiveDistrict.setText("Active District: " + str(districtName[self.activedistrict]))
 
     def selectByActiveDistrict(self):
         self.activeLayer.removeSelection()
-        expr = QgsExpression("\"" + self.distfield + "\"='" + str(self.activedistrict) + "'")
+        strExpr = "\"" + self.distfield + "\" = '" + str(districtName[self.activedistrict]) + "'"
+        expr = QgsExpression(strExpr)
         unselected = self.activeLayer.getFeatures(QgsFeatureRequest(expr))
         ids = [i.id() for i in unselected]
         self.activeLayer.select(ids)
-        box = self.activeLayer.boundingBoxOfSelected()
-        self.canvas.setExtent(box)
-        self.canvas.refresh()
+        if len(ids) > 0:
+            box = self.activeLayer.boundingBoxOfSelected()
+            self.canvas.setExtent(box)
+            self.canvas.refresh()
 
     def selectUnassigned(self):
         """
         Selects any unassigned districts
         """
         self.dlgtoolbox.hide()
-        expr = QgsExpression("\"" + self.distfield + "\"='0'")
+        expr = QgsExpression("\"" + self.distfield + "\"='0' OR \"" + self.distfield + "\" IS NULL")
         unselected = self.activeLayer.getFeatures(QgsFeatureRequest(expr))
         ids = [i.id() for i in unselected]
         self.activeLayer.select(ids)
@@ -2310,3 +2312,4 @@ class StattoRedistrict(object):
             selectedLayer.updateFields()
             self.dlgparameters.cmbDistField.addItem(fieldname)
             self.dlgparameters.cmbDistField.setCurrentIndex((self.dlgparameters.cmbDistField.findText(fieldname)))
+
