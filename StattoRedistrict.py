@@ -1543,7 +1543,7 @@ class StattoRedistrict(object):
                     try:
                         locked[districtName[q]] = 0
                     except:
-                        QgsMessageLog("Could not lock field " + str(districtName[q]))
+                        QgsMessageLog("Could not lock field")
                 
                 self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem(str(districtName[q])))
                 if q == 0:
@@ -2079,12 +2079,12 @@ class StattoRedistrict(object):
         field_id = self.activeLayer.fields().indexFromName(self.distfield)
         select_list = []
         select_list.append(feature)
+        feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
 
         if self.spatialIndex == None:
             QgsMessageLog.logMessage("Building spatial index...")
             # Build a spatial index
             # this is inefficient - should probably build this once when the layer is initialised
-            feature_dict = {f.id(): f for f in self.activeLayer.getFeatures()}
             self.spatialIndex = QgsSpatialIndex()
             for f in list(feature_dict.values()):
                 self.spatialIndex.insertFeature(f)
@@ -2130,7 +2130,7 @@ class StattoRedistrict(object):
         self.activedistrict = feature[self.distfield]
         try:
             self.dockwidget.lblActiveDistrict.setText("Active District: " + str(districtName[self.activedistrict]))
-            self.dockwidget.sliderDistricts.setValue(int(districtId[str(self.activedistrict)]))
+            self.dockwidget.sliderDistricts.setValue(int(self.activedistrict))
         except:
             self.dockwidget.lblActiveDistrict.setText("Active District: 0")
             self.dockwidget.sliderDistricts.setValue(0)
