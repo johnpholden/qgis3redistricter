@@ -503,7 +503,10 @@ class StattoRedistrict(object):
             selected_feats = layer.getFeatures(request)
             idx = layer.fields().indexFromName(self.distfield)
             attr = [ str(feat.attributes()[idx]) for feat in selected_feats ]
-            self.visibleFeats = list(dict.fromkeys(attr))
+            try:
+                self.visibleFeats = list(dict.fromkeys(districtName[attr]))
+            except:
+                self.visibleFeats = list(dict.fromkeys(attr))
             self.updateTable()
 
     def updateAttributes(self):
@@ -1798,7 +1801,7 @@ class StattoRedistrict(object):
         saveFileName, __ = QFileDialog.getSaveFileName(None, "Save File", "export.csv", "Comma Separated Values (*.csv)")
         if saveFileName:
             with open(saveFileName, 'w') as csvFile:
-                csvWriter = csv.writer(csvFile, delimiter=',', newline='')
+                csvWriter = csv.writer(csvFile, delimiter=',')
                 headerWriter = ['id','District','Population','To Target', 'Dev%']
                 for d in dataFieldList:
                         headerWriter.append(d.name)
@@ -1884,7 +1887,7 @@ class StattoRedistrict(object):
             QCoreApplication.processEvents()
 # and then save the file
             with open(saveFileName, 'w') as csvFile:
-                csvWriter = csv.writer(csvFile, delimiter=',', newline='')
+                csvWriter = csv.writer(csvFile, delimiter=',')
                 headerWriter = [str(crossTabFieldName), 'District','Population','% of ' + str(crossTabFieldName), '% of District']
 #                for d in dataFieldList:
 #                        headerWriter.append(d.name)
@@ -2130,7 +2133,7 @@ class StattoRedistrict(object):
         self.activedistrict = feature[self.distfield]
         try:
             self.dockwidget.lblActiveDistrict.setText("Active District: " + str(districtName[self.activedistrict]))
-            self.dockwidget.sliderDistricts.setValue(int(self.activedistrict))
+            self.dockwidget.sliderDistricts.setValue(int(districtId[districtName[self.activedistrict]]))
         except:
             self.dockwidget.lblActiveDistrict.setText("Active District: 0")
             self.dockwidget.sliderDistricts.setValue(0)
