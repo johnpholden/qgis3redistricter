@@ -1304,9 +1304,12 @@ class StattoRedistrict(object):
         self.totalpop = 0
         self.targetpop = 0
         for feature in self.activeLayer.getFeatures():
-                self.totalpop = self.totalpop + int(feature[self.popfield])
+                self.totalpop = self.totalpop + (feature[self.popfield])
                 if self.popfield2 and self.popfield2 != 'None':
-                    self.totalpop2 = self.totalpop2 + int(feature[self.popfield2])
+                    self.totalpop2 = self.totalpop2 + (feature[self.popfield2])
+        #converting this to integer makes sure we can still load the file
+        self.totalpop = int(self.totalpop)
+        self.totalpop2 = int(self.totalpop2) 
         self.targetpop = int(round(self.totalpop / self.districts))
         self.targetpoppct = self.dlgparameters.inpTolerance.value()
         self.targetpoppct2 = self.dlgparameters.inpTolerance_2.value()
@@ -1517,11 +1520,11 @@ class StattoRedistrict(object):
 
             for d in dataFieldList:
                     try:
-                            d.field_sum[int(districtId[str(feature[self.distfield])])] = d.field_sum[int(districtId[str(feature[self.distfield])])] + int(feature[d.name])
-                            d.total_sum = d.total_sum + int(feature[d.name])
+                            d.field_sum[int(districtId[str(feature[self.distfield])])] = d.field_sum[int(districtId[str(feature[self.distfield])])] + (feature[d.name])
+                            d.total_sum = d.total_sum + (feature[d.name])
                     except:
-                            d.field_sum[0] = d.field_sum[0] + int(feature[d.name])
-                            d.total_sum = d.total_sum + int(feature[d.name])
+                            d.field_sum[0] = d.field_sum[0] + (feature[d.name])
+                            d.total_sum = d.total_sum + (feature[d.name])
         gc.collect()
 
 
@@ -1551,9 +1554,12 @@ class StattoRedistrict(object):
                 self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem(str(districtName[q])))
                 if q == 0:
                     self.attrdockwidget.tblPop.setItem(p,0,QTableWidgetItem('Unassigned'))
-                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str('{:,}'.format(distPop[q]))))
-#                self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str(distPop[p])))
-                self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:+,}'.format(distPop[q] - self.targetpop))))
+                if isinstance(distPop[q],int) == True:
+                    self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str('{:,}'.format(distPop[q]))))
+                    self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:+,}'.format(round(distPop[q] - self.targetpop,0)))))		    
+                else:
+                    self.attrdockwidget.tblPop.setItem(p,2,QTableWidgetItem(str('{:,}'.format(round(distPop[q],2)))))
+                    self.attrdockwidget.tblPop.setItem(p,3,QTableWidgetItem(str('{:+,}'.format(round(distPop[q] - self.targetpop,2)))))
                 self.attrdockwidget.tblPop.setItem(p,4,QTableWidgetItem(str(round((float(float(distPop[q]) / float(self.targetpop)) * 100)-100,2))+'%'))
                 if self.usepopfield2 == 1:
                     self.attrdockwidget.tblPop.setItem(p,5,QTableWidgetItem(str('{:+,}'.format(distPop2[q]))))
@@ -1597,7 +1603,10 @@ class StattoRedistrict(object):
                 for d in dataFieldList:
                         rowNum = rowNum + 1
                         if d.type == 1:
-                                self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(d.field_sum[q])))
+                        	if isinstance(d.field_sum[q], int) == True:
+	                                self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(d.field_sum[q])))
+	                        else:
+	                                self.attrdockwidget.tblPop.setItem(p,4+rowNum,QTableWidgetItem(str(round(d.field_sum[q],3))))	                        
                         elif d.type == 2:
                                 if distPop[p] > 0:
 #                                        QgsMessageLog.logMessage(str(d.field_sum[p]) + " " + str(distPop[p]))
